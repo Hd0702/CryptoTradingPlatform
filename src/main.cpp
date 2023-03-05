@@ -1,6 +1,7 @@
 #include <iostream>
 #include "exchanges/kraken/KrakenClient.hpp"
 
+
 int main() {
     auto env_reader = Env::EnvReader("../.env");
     Kraken::KrakenClient kclient = Kraken::KrakenClient(env_reader);

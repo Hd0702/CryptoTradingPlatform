@@ -1,13 +1,6 @@
-//
-// Created by Hayden Donofrio on 2/23/23.
-//
-
 #include <boost/date_time/posix_time/posix_time_io.hpp>
 
-#include <openssl/buffer.h>
 #include <openssl/sha.h>
-#include <openssl/hmac.h>
-#include <openssl/bio.h>
 
 #include "KrakenClient.hpp"
 #include "../../encryption/EncryptionHelper.hpp"
