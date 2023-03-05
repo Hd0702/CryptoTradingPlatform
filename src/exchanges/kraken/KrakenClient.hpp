@@ -2,13 +2,11 @@
 // Created by Hayden Donofrio on 2/23/23.
 //
 
-#ifndef CRYPTOTRADINGPLATFORM_KRAKENCLIENT_H
-#define CRYPTOTRADINGPLATFORM_KRAKENCLIENT_H
-
+#pragma once
 #include <string>
 #include <curl/curl.h>
 
-#include "../config/EnvReader.h"
+#include "../../config/EnvReader.hpp"
 
 namespace Kraken {
     class KrakenClient {
@@ -26,14 +24,6 @@ namespace Kraken {
         CURL* curl;
         Env::EnvReader& env_reader;
         static size_t CurlCallback(char* ptr, size_t size, size_t nmemb, void* userdata);
-        static std::vector<unsigned char> B64Decode(const std::string& data);
-
-        const unsigned char *  HMACSha512(const std::vector<unsigned char> &data, const std::vector<unsigned char> &key) const;
-
-        const std::string Signature(const std::string &path, const std::string &nonce, const std::string &postData) const;
-
-        const std::string B64Encode(const unsigned char* data) const;
+        [[nodiscard]] std::string Signature(const std::string &path, const std::string &nonce, const std::string &postData) const;
     };
 }
-
-#endif //CRYPTOTRADINGPLATFORM_KRAKENCLIENT_H

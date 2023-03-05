@@ -6,7 +6,7 @@
 #include <string>
 #include <cstdlib>
 
-#include "EnvReader.h"
+#include "EnvReader.hpp"
 
 namespace Env {
     EnvReader::EnvReader(const std::string&& file_path) {

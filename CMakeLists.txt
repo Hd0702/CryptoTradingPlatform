@@ -16,5 +16,5 @@ find_package (OpenSSL REQUIRED)
 include_directories (${OPENSSL_INCLUDE_DIR})
 list(APPEND LIBS ${OPENSSL_LIBRARIES})
 
-add_executable(CryptoTradingPlatform src/main.cpp src/exchanges/KrakenClient.h src/exchanges/KrakenClient.cpp src/exchanges/KrakenClient.cpp src/config/EnvReader.h src/config/EnvReader.cpp)
+add_executable(CryptoTradingPlatform src/main.cpp src/exchanges/kraken/KrakenClient.hpp src/exchanges/kraken/KrakenClient.cpp src/exchanges/kraken/KrakenClient.cpp src/config/EnvReader.hpp src/config/EnvReader.cpp src/encryption/EncryptionHelper.hpp src/encryption/EncryptionHelper.cpp)
 TARGET_LINK_LIBRARIES(CryptoTradingPlatform  LINK_PUBLIC ${Boost_LIBRARIES} LINK_PUBLIC ${CURL_LIBRARIES} LINK_PUBLIC ${OPENSSL_LIBRARIES})
