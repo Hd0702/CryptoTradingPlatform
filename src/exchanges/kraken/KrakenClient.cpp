@@ -6,7 +6,7 @@
 #include "../../encryption/EncryptionHelper.hpp"
 
 namespace Kraken {
-    KrakenClient::KrakenClient(Env::EnvReader& env_reader_instance): env_reader(env_reader_instance) { Init(); }
+    KrakenClient::KrakenClient(Env::EnvReader &env_reader_instance) : env_reader(env_reader_instance) { Init(); }
 
     void KrakenClient::Init() {
 
@@ -24,43 +24,37 @@ namespace Kraken {
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, KrakenClient::CurlCallback);
     }
 
+    KrakenClient::~KrakenClient() {
+        curl_easy_cleanup(curl);
+    }
+
     const std::string KrakenClient::GenerateNonce() {
-        return std::to_string(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+        return std::to_string(std::chrono::duration_cast<std::chrono::microseconds>(
+                std::chrono::system_clock::now().time_since_epoch()).count());
     }
 
     std::string KrakenClient::GetServerTime() {
         const auto path = std::string(KrakenClient::url) + std::string(KrakenClient::timeURL);
         curl_easy_setopt(curl, CURLOPT_URL, path.c_str());
         std::string response;
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, static_cast<void*>(&response));
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, static_cast<void *>(&response));
         CURLcode result = curl_easy_perform(curl);
         if (result != CURLE_OK) {
             std::ostringstream oss;
-            oss << "curl_easy_perform() failed: "<< curl_easy_strerror(result);
+            oss << "curl_easy_perform() failed: " << curl_easy_strerror(result);
             throw std::runtime_error(oss.str());
         }
         return response;
     }
 
-    static std::vector<unsigned char> generateSha256(const std::string& data)
-    {
-        std::vector<unsigned char> digest(SHA256_DIGEST_LENGTH);
-        unsigned char * d = SHA256(reinterpret_cast<const unsigned char*>(data.c_str()), data.size(), nullptr);
-        for (int i =0; i < SHA256_DIGEST_LENGTH; i++) {
-            digest[i] = d[i];
-        }
-
-        return digest;
-    }
-
-    std::string KrakenClient::Signature(const std::string& path,
-                                        const std::string& nonce,
-                                        const std::string& postData) const {
+    std::string KrakenClient::Signature(const std::string &path,
+                                        const std::string &nonce,
+                                        const std::string &postData) const {
         // add path to data to encrypt
         std::string data(path.begin(), path.end());
 
         // concatenate nonce and postdata and compute SHA256
-        std::vector<unsigned char> nonce_postdata = generateSha256(nonce + postData);
+        std::vector<unsigned char> nonce_postdata = Encryption::HMACSha256(nonce + postData);
 
         // concatenate path and nonce_postdata (path + sha256(nonce + postdata))
         data += std::string(nonce_postdata.begin(), nonce_postdata.end());
@@ -70,8 +64,8 @@ namespace Kraken {
         return Encryption::B64Encode(Encryption::HMACSha512(data, decoded));
     }
 
-    size_t KrakenClient::CurlCallback(char* ptr, size_t size, size_t nmemb, void *userdata) {
-        auto response = static_cast<std::string*>(userdata);
+    size_t KrakenClient::CurlCallback(char *ptr, size_t size, size_t nmemb, void *userdata) {
+        auto response = static_cast<std::string *>(userdata);
         auto real_size = size * nmemb;
 
         response->append(ptr, real_size);
@@ -87,9 +81,9 @@ namespace Kraken {
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, postdata.c_str());
 
         // add custom header
-        curl_slist* chunk = NULL;
+        curl_slist *chunk = NULL;
 
-        std::string key_header =  "API-Key: "  + key;
+        std::string key_header = "API-Key: " + key;
         std::string sign_header = "API-Sign: " + Signature(path, nonce, postdata);
 
         chunk = curl_slist_append(chunk, key_header.c_str());
@@ -98,7 +92,7 @@ namespace Kraken {
 
         // where CURL write callback function stores the response
         std::string response;
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, static_cast<void*>(&response));
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, static_cast<void *>(&response));
         // perform CURL request
         CURLcode result = curl_easy_perform(curl);
 
@@ -111,7 +105,6 @@ namespace Kraken {
             oss << "curl_easy_perform() failed: " << curl_easy_strerror(result);
             throw std::runtime_error(oss.str());
         }
-
         return response;
     }
 }

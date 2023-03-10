@@ -13,6 +13,7 @@ namespace Kraken {
     public:
         static constexpr std::string_view url = "https://api.kraken.com";
         KrakenClient(Env::EnvReader& env_reader_instance);
+        ~KrakenClient();
         std::string GetServerTime();
         std::string GetBalance();
     private:
