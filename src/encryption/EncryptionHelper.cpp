@@ -6,6 +6,7 @@
 #include <vector>
 #include <sstream>
 #include <iomanip>
+#include <boost/algorithm/hex.hpp>
 
 namespace Encryption {
     std::string Encryption::HMACSha512(const std::string data, const std::string key) {
@@ -49,8 +50,8 @@ namespace Encryption {
     }
 
     // Returns a hash as unsigned chars into a string. For further transformations please use ToHex to transform into a hex value.
-    std::string Encryption::HMACSha256(std::string data, std::string key) {
-        return reinterpret_cast<const char *>(HMAC(EVP_sha256(), key.data(), key.size(), reinterpret_cast<const unsigned char *>(data.data()), data.size(), nullptr, nullptr));
+    std::string Encryption::HMACSha256(std::string data, std::string key, unsigned char *result, unsigned int *result_len) {
+        return reinterpret_cast<const char *>(HMAC(EVP_sha256(), key.data(), key.size(), reinterpret_cast<const unsigned char *>(data.data()), data.size(), result, result_len));
     }
 
     std::vector<unsigned char> Encryption::HMACSha256(const std::string& data) {
@@ -64,10 +65,8 @@ namespace Encryption {
     }
 
     std::string Encryption::ToHex(std::string data, size_t digest_len) {
-        const auto data_c_str = reinterpret_cast<const unsigned char *>(data.c_str());
-        std::stringstream stream;
-        for (size_t i = 0; i < digest_len; ++i)
-            stream << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(data_c_str[i]);
-        return stream.str();
+        std::string result;,
+        boost::algorithm::hex_lower(data.begin(), data.end(), std::back_inserter(result));
+        return result;
     }
 }

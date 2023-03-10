@@ -7,8 +7,11 @@ int main() {
     curl_global_init(CURL_GLOBAL_DEFAULT);
     Kraken::KrakenClient kclient = Kraken::KrakenClient(env_reader);
     Coinbase::CoinbaseClient cclient = Coinbase::CoinbaseClient(env_reader, Clock());
-    std::cout << "Hello, World from Coinbase: " << cclient.ListAccounts() << std::endl;
-    std::cout << "Hello, World from Kraken: " << kclient.GetBalance() << std::endl;
+    std::string response;
+    do {
+        response = cclient.ListAccounts();
+        std::cout << response << std::endl;
+    } while (response.find("Unauthorized") == std::string::npos);
     curl_global_cleanup();
     return 0;
 }

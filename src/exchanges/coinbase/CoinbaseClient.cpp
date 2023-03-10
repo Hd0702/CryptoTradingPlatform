@@ -75,6 +75,9 @@ namespace Coinbase {
         std::vector<std::string> tokens;
         boost::split(tokens, requestPath, boost::is_any_of("?"));
         const auto message = timestamp + method + requestPath + body;
-        return Encryption::ToHex(Encryption::HMACSha256(message, secret), SHA256_DIGEST_LENGTH);
+        unsigned int result_len;
+        auto sha_digest = Encryption::HMACSha256(message, secret, nullptr, &result_len);
+        auto hex_result = Encryption::ToHex(sha_digest, result_len);
+        return hex_result;
     }
 }
