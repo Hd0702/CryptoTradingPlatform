@@ -4,13 +4,13 @@
 #include <openssl/hmac.h>
 #include <openssl/bio.h>
 #include <vector>
-#include <sstream>
-#include <iomanip>
 #include <boost/algorithm/hex.hpp>
 
 namespace Encryption {
     std::string Encryption::HMACSha512(const std::string data, const std::string key) {
-        return reinterpret_cast<const char *>(HMAC(EVP_sha512(), key.data(), key.size(), reinterpret_cast<const unsigned char *>(data.data()), data.size(), nullptr, nullptr));
+        std::vector<unsigned char> result(EVP_MAX_MD_SIZE);
+        reinterpret_cast<const char *>(HMAC(EVP_sha512(), key.data(), key.size(), reinterpret_cast<const unsigned char *>(data.data()), data.size(), result.data(), nullptr));
+        return { result.begin(), result.end()};
     }
 
     std::string Encryption::B64Decode(std::string data) {
@@ -50,8 +50,10 @@ namespace Encryption {
     }
 
     // Returns a hash as unsigned chars into a string. For further transformations please use ToHex to transform into a hex value.
-    std::string Encryption::HMACSha256(std::string data, std::string key, unsigned char *result, unsigned int *result_len) {
-        return reinterpret_cast<const char *>(HMAC(EVP_sha256(), key.data(), key.size(), reinterpret_cast<const unsigned char *>(data.data()), data.size(), result, result_len));
+    std::string Encryption::HMACSha256(std::string data, std::string key, unsigned int *result_len) {
+        std::vector<unsigned char> result(SHA256_DIGEST_LENGTH);
+        reinterpret_cast<const char *>(HMAC(EVP_sha256(), key.data(), key.size(), reinterpret_cast<const unsigned char *>(data.data()), data.size(), result.data(), result_len));
+        return { result.begin(), result.end() };
     }
 
     std::vector<unsigned char> Encryption::HMACSha256(const std::string& data) {
@@ -65,7 +67,7 @@ namespace Encryption {
     }
 
     std::string Encryption::ToHex(std::string data, size_t digest_len) {
-        std::string result;,
+        std::string result;
         boost::algorithm::hex_lower(data.begin(), data.end(), std::back_inserter(result));
         return result;
     }

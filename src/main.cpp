@@ -9,9 +9,9 @@ int main() {
     Coinbase::CoinbaseClient cclient = Coinbase::CoinbaseClient(env_reader, Clock());
     std::string response;
     do {
-        response = cclient.ListAccounts();
+        response = kclient.GetBalance();
         std::cout << response << std::endl;
-    } while (response.find("Unauthorized") == std::string::npos);
+    } while (response.find("Invalid") == std::string::npos);
     curl_global_cleanup();
     return 0;
 }

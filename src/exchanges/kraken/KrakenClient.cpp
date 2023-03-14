@@ -62,6 +62,7 @@ namespace Kraken {
 
         // and compute HMAC
         auto decoded = Encryption::B64Decode(secret);
+        auto output = Encryption::B64Encode(Encryption::HMACSha512(data, decoded));
         return Encryption::B64Encode(Encryption::HMACSha512(data, decoded));
     }
 

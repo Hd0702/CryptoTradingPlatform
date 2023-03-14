@@ -1,11 +1,8 @@
 
 #include <boost/algorithm/string.hpp>
-#include <openssl/buffer.h>
 #include <openssl/sha.h>
-#include <openssl/hmac.h>
 #include <openssl/bio.h>
 #include <curl/curl.h>
-#include <iostream>
 
 #include "CoinbaseClient.hpp"
 #include "encryption/EncryptionHelper.hpp"
@@ -76,7 +73,7 @@ namespace Coinbase {
         boost::split(tokens, requestPath, boost::is_any_of("?"));
         const auto message = timestamp + method + requestPath + body;
         unsigned int result_len;
-        auto sha_digest = Encryption::HMACSha256(message, secret, nullptr, &result_len);
+        auto sha_digest = Encryption::HMACSha256(message, secret, &result_len);
         auto hex_result = Encryption::ToHex(sha_digest, result_len);
         return hex_result;
     }
