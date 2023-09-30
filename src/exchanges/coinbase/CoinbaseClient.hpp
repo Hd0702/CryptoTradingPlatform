@@ -13,15 +13,15 @@ namespace Coinbase {
     public:
         CoinbaseClient(const Env::EnvReader& env_reader_instance, Clock clock);
         ~CoinbaseClient();
-        std::string ListAccounts();
+        std::string listAccounts();
     private:
         const std::string url = "https://api.coinbase.com";
         std::string
-        GenerateSignature(const std::string &method, const std::string &requestPath, const std::string &body,
+        generateSignature(const std::string &method, const std::string &requestPath, const std::string &body,
                           const std::string &timestamp);
         Clock clock;
         CURL* curl;
-        static size_t CurlCallback(char* ptr, size_t size, size_t nmemb, void* userdata);
+        static size_t curlCallback(char* ptr, size_t size, size_t nmemb, void* userdata);
         std::string key;
         std::string secret;
     };

@@ -7,9 +7,9 @@ struct Base64TestParameters : public testing::TestWithParam<std::pair<std::strin
 TEST_P(Base64TestParameters, Base64Test) {
     const std::string input = std::get<0>(Base64TestParameters::GetParam());
     std::string expectedEncodedOutput = std::get<1>(Base64TestParameters::GetParam());
-    const auto actualEncodedOutput = Encryption::B64Encode(input);
+    const auto actualEncodedOutput = Encryption::b64Encode(input);
     ASSERT_THAT(actualEncodedOutput.rfind(expectedEncodedOutput), ::testing::Eq(0));
-    ASSERT_THAT(input, Encryption::B64Decode(Encryption::B64Encode(input)));
+    ASSERT_THAT(input, Encryption::b64Decode(Encryption::b64Encode(input)));
 }
 
 INSTANTIATE_TEST_SUITE_P(

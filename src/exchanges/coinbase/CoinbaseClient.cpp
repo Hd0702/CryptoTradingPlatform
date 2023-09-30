@@ -1,6 +1,5 @@
 
 #include <boost/algorithm/string.hpp>
-#include <openssl/sha.h>
 #include <openssl/bio.h>
 #include <curl/curl.h>
 
@@ -9,7 +8,7 @@
 
 namespace Coinbase {
     // Curl callbacks are not allowed to be C++ functions, so we need to use C functions.
-    size_t CoinbaseClient::CurlCallback(char *ptr, size_t size, size_t nmemb, void *userdata) {
+    size_t CoinbaseClient::curlCallback(char *ptr, size_t size, size_t nmemb, void *userdata) {
         auto response = static_cast<std::string *>(userdata);
         auto real_size = size * nmemb;
 
@@ -30,23 +29,23 @@ namespace Coinbase {
         curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1L);
         curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 2L);
         curl_easy_setopt(curl, CURLOPT_USERAGENT, "Coinbase C++ API Client");
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, CoinbaseClient::CurlCallback);
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, CoinbaseClient::curlCallback);
     }
 
     CoinbaseClient::~CoinbaseClient() {
         curl_easy_cleanup(curl);
     }
 
-    std::string CoinbaseClient::ListAccounts() {
+    std::string CoinbaseClient::listAccounts() {
         const std::string method = "GET";
         const std::string body = "";
         const std::string accounts_url = "/api/v3/brokerage/accounts";
-        const auto timestamp = std::to_string(clock.GetMillisSinceEpoch());
+        const auto timestamp = std::to_string(clock.getMillisSinceEpoch());
         curl_easy_setopt(curl, CURLOPT_URL, (url + accounts_url).c_str());
         const auto accept_header = std::make_pair("accept", "application/json");
         const auto access_key_header = std::make_pair("CB-ACCESS-KEY", key);
         const auto access_sign_header = std::make_pair("CB-ACCESS-SIGN",
-                                                       GenerateSignature(method, accounts_url, body, timestamp));
+                                                       generateSignature(method, accounts_url, body, timestamp));
         const auto access_timestamp_header = std::make_pair("CB-ACCESS-TIMESTAMP", timestamp);
         curl_slist *chunk = nullptr;
         std::vector<const std::pair<std::string, std::string>> headers = {accept_header, access_key_header,
@@ -66,15 +65,15 @@ namespace Coinbase {
         return response;
     }
 
-    std::string CoinbaseClient::GenerateSignature(const std::string &method, const std::string &requestPath,
+    std::string CoinbaseClient::generateSignature(const std::string &method, const std::string &requestPath,
                                                   const std::string &body,
                                                   const std::string &timestamp) {
         std::vector<std::string> tokens;
         boost::split(tokens, requestPath, boost::is_any_of("?"));
         const auto message = timestamp + method + requestPath + body;
         unsigned int result_len;
-        auto sha_digest = Encryption::HMACSha256(message, secret, &result_len);
-        auto hex_result = Encryption::ToHex(sha_digest, result_len);
+        auto sha_digest = Encryption::hmacSha256(message, secret, &result_len);
+        auto hex_result = Encryption::toHex(sha_digest, result_len);
         return hex_result;
     }
 }

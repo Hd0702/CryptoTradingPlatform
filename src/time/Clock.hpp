@@ -5,5 +5,5 @@
 
 class Clock {
 public:
-    long long GetMillisSinceEpoch();
+    long long getMillisSinceEpoch();
 };
