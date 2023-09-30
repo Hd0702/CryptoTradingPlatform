@@ -2,3 +2,4 @@ cmake*/
 .idea/*
 .env
 external/
+tst/cmake*/
