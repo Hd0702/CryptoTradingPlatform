@@ -26,5 +26,5 @@ namespace Coinbase {
         std::string secret;
     };
 
-} // Coinbase
+}
 

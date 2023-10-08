@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <vector>
 #include <curl/curl.h>
 
 #include "../../config/EnvReader.hpp"
@@ -13,7 +14,7 @@ namespace Kraken {
         std::string getServerTime();
         std::string getBalance();
         std::string getTradesSince(const long long epochMillis, const std::string pair = "ETHUSD") const;
-        std::string buy() const;
+        std::string buy(const std::string& pair, const std::string& volume, const std::string& type, const std::string& orderType) const;
     private:
         static constexpr std::string_view timeURL = "/0/public/Time";
         static constexpr std::string_view tradesURL = "/0/public/Trades";
@@ -27,6 +28,7 @@ namespace Kraken {
         [[nodiscard]] std::string signature(const std::string &path, const std::string &nonce, const std::string &postData) const;
         std::string makePublicCall(const std::string& path, const std::unique_ptr<curl_slist> &headers=nullptr,const std::string& postdata = "") const;
         // TODO: try to refactor to unique_ptr
-        std::string makePrivateCall(const std::string &pathSuffix, curl_slist *headers) const;
+        using PostDataList = std::vector<const std::pair<std::string, std::string>>;
+        std::string makePrivateCall(const std::string &pathSuffix, curl_slist *headers = nullptr, PostDataList postData = PostDataList()) const;
     };
 }

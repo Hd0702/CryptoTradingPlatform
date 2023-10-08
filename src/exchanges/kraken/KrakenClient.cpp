@@ -1,4 +1,4 @@
-#include <openssl/sha.h>
+#include <numeric>
 #include <sstream>
 
 #include "KrakenClient.hpp"
@@ -35,21 +35,13 @@ namespace Kraken {
         return makePublicCall(path);
     }
 
-    std::string KrakenClient::buy() const {
-        // hardcoded values for testing purposes replace later
-        const std::string pair = "pair: ETHUSDT";
-        const std::string volume = "volume: 0.01";
-        const std::string type = "type: sell";
-        const std::string orderType = "ordertype: market";
-
-        // set body
+    std::string KrakenClient::buy(const std::string& pair, const std::string& volume, const std::string& type, const std::string& orderType) const {
         curl_slist* headers = nullptr;
-        headers = curl_slist_append(headers, pair.c_str());
-        headers = curl_slist_append(headers, volume.c_str());
-        headers = curl_slist_append(headers, type.c_str());
-        headers = curl_slist_append(headers, orderType.c_str());
+        std::vector<const std::pair<std::string, std::string>> postData = {
+                std::make_pair("pair", pair), std::make_pair("volume",  volume), std::make_pair("type", type), std::make_pair("ordertype", orderType)
+        };
 
-        return makePrivateCall("/0/private/AddOrder", headers);
+        return makePrivateCall("/0/private/AddOrder", headers, postData);
     }
 
     const std::string KrakenClient::nonce() const {
@@ -107,14 +99,25 @@ namespace Kraken {
         return response;
     }
 
-    std::string KrakenClient::makePrivateCall(const std::string &pathSuffix, curl_slist *headers) const {
+    std::string KrakenClient::makePrivateCall(const std::string &pathSuffix, curl_slist *headers, std::vector<const std::pair<std::string, std::string>> postData) const {
         std::string nonce = this->nonce();
         const std::string fullPath = std::string(KrakenClient::url) + pathSuffix;
         curl_easy_setopt(curl, CURLOPT_URL, fullPath.c_str());
-        std::string postdata = "nonce=" + nonce;
-        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, postdata.c_str());
+        // always have the nonce be the last postfield for formatting
+        std::string postDataString;
+        auto transformPostDataFunc = [&](const std::pair<std::string, std::string>& nameAndData) {
+            return nameAndData.first + '=' + nameAndData.second + '&';
+        };
+        if (!postData.empty()) {
+            postDataString += std::reduce(postData.begin() + 1, postData.end(), transformPostDataFunc(*postData.cbegin()), [&](std::string res, const std::pair<std::string, std::string> nxt){
+                res += transformPostDataFunc(nxt);
+                return res;
+            });
+        }
+        postDataString += "nonce=" + nonce;
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, postDataString.c_str());
         std::string key_header = "API-Key: " + key;
-        std::string sign_header = "API-Sign: " + signature(pathSuffix, nonce, postdata);
+        std::string sign_header = "API-Sign: " + signature(pathSuffix, nonce, postDataString);
         headers = curl_slist_append(headers, key_header.c_str());
         headers = curl_slist_append(headers, sign_header.c_str());
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
@@ -123,7 +126,6 @@ namespace Kraken {
         std::string response;
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, static_cast<void *>(&response));
         // perform CURL request
-        // commenting out to check hash
         CURLcode result = curl_easy_perform(curl);
 
         // free the custom headers
