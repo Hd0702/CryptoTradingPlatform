@@ -1,5 +1,6 @@
 #include <numeric>
 #include <sstream>
+#include <boost/json/src.hpp>
 
 #include "KrakenClient.hpp"
 #include "../../encryption/EncryptionHelper.hpp"
@@ -41,7 +42,13 @@ namespace Kraken {
                 std::make_pair("pair", pair), std::make_pair("volume",  volume), std::make_pair("type", type), std::make_pair("ordertype", orderType)
         };
 
-        return makePrivateCall("/0/private/AddOrder", headers, postData);
+        std::string result = makePrivateCall("/0/private/AddOrder", headers, postData);
+        boost::json::value val = boost::json::parse(result);
+        boost::json::array errors = val.at("error").as_array();
+        if (!errors.empty()) {
+            throw std::runtime_error(std::string("Error buying Kraken order ") + errors.front().as_string().c_str());
+        }
+        return result;
     }
 
     const std::string KrakenClient::nonce() const {

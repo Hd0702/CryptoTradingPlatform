@@ -13,7 +13,7 @@ int main() {
     const auto oneDayAgo = now - std::chrono::hours(24);
     const long long oneDayAgoMillis = std::chrono::duration_cast<std::chrono::milliseconds>(oneDayAgo.time_since_epoch()).count();
     // hardcoded values for testing purposes replace later
-    response = kclient.buy("ETHUSDT", "0.01", "buy", "market");
+    response = kclient.buy("ETHUSDT", "0.01", "sell", "market");
     Json::Value root;
     auto elapsed = std::chrono::system_clock::now() - now;
     long long microseconds = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();

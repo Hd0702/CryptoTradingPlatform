@@ -1,9 +1,13 @@
-cmake_minimum_required(VERSION 3.26)
+cmake_minimum_required(VERSION 3.26.4)
 project(CryptoTradingPlatform)
 set(CMAKE_CXX_STANDARD 20)
 
 # Boost
 find_package(Boost 1.81 COMPONENTS program_options REQUIRED)
+if(NOT Boost_FOUND)
+    message(FATAL_ERROR "Boost Not found")
+endif()
+
 INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIR})
 #Curl
 find_package (CURL REQUIRED)
@@ -27,5 +31,6 @@ enable_testing()
 add_subdirectory(tst)
 
 add_executable(CryptoTradingPlatform src/main.cpp src/exchanges/kraken/KrakenClient.hpp src/exchanges/kraken/KrakenClient.cpp src/exchanges/kraken/KrakenClient.cpp src/config/EnvReader.hpp src/config/EnvReader.cpp src/encryption/EncryptionHelper.hpp src/encryption/EncryptionHelper.cpp src/exchanges/coinbase/CoinbaseClient.hpp src/time/Clock.hpp src/time/Clock.cpp src/exchanges/coinbase/CoinbaseClient.cpp
-        src/config/EnvReader.cpp)
-TARGET_LINK_LIBRARIES(CryptoTradingPlatform  LINK_PUBLIC ${Boost_LIBRARIES} LINK_PUBLIC ${CURL_LIBRARIES} LINK_PUBLIC ${OPENSSL_LIBRARIES} LINK_PUBLIC ${JSONCPP_LINK_LIBRARIES})
+        src/config/EnvReader.cpp
+        src/exchanges/kraken/models/KrakenResult.h)
+TARGET_LINK_LIBRARIES(CryptoTradingPlatform LINK_PUBLIC Boost::program_options LINK_PUBLIC ${CURL_LIBRARIES} LINK_PUBLIC ${OPENSSL_LIBRARIES} LINK_PUBLIC ${JSONCPP_LINK_LIBRARIES})
