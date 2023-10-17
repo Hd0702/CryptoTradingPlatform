@@ -42,12 +42,14 @@ namespace Kraken {
                 std::make_pair("pair", pair), std::make_pair("volume",  volume), std::make_pair("type", type), std::make_pair("ordertype", orderType)
         };
 
-        std::string result = makePrivateCall("/0/private/AddOrder", headers, postData);
+        // std::string result = makePrivateCall("/0/private/AddOrder", headers, postData);
+        std::string result = "{\"error\":[],\"result\":{\"txid\":[\"OFDI5Y-332NU-XRMM2L\"],\"descr\":{\"order\":\"sell 0.01000000 ETHUSDT @ market\"}}}";
         boost::json::value val = boost::json::parse(result);
         boost::json::array errors = val.at("error").as_array();
         if (!errors.empty()) {
             throw std::runtime_error(std::string("Error buying Kraken order ") + errors.front().as_string().c_str());
         }
+        // is it worth turning into an object?
         return result;
     }
 
