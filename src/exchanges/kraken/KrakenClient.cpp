@@ -1,11 +1,23 @@
 #include <numeric>
 #include <sstream>
-#include <boost/json/src.hpp>
+#include <nlohmann/json.hpp>
 
 #include "KrakenClient.hpp"
 #include "../../encryption/EncryptionHelper.hpp"
+#include "OHLC.hpp"
 
 namespace Kraken {
+
+    nlohmann::json parseAndThrowErrors(std::string krakenResult) {
+        auto jsonResult = nlohmann::json::parse(krakenResult);
+        std::vector<std::string> errors = jsonResult.at("error");
+        if (!errors.empty()) {
+            throw std::runtime_error(std::string("Errors returned from Kraken: ")
+                                     + std::accumulate(std::next(errors.cbegin()), errors.cend(), errors[0], [](const std::string& accum, const std::string& error) { return accum + ", " + error; }));
+        }
+        return jsonResult.at("result");
+    }
+
     KrakenClient::KrakenClient(Env::EnvReader &env_reader_instance) : env_reader(env_reader_instance) { Init(); }
 
     void KrakenClient::Init() {
@@ -29,11 +41,14 @@ namespace Kraken {
         curl_easy_cleanup(curl);
     }
 
-    // for now we save trade data into a file
-    // Kraken requests timestamps in milliseconds
-    std::string KrakenClient::getTradesSince(const long long epochMillis, const std::string pair) const {
-        const auto path = std::string(KrakenClient::url) + std::string(KrakenClient::tradesURL) + "?pair=" + pair + "&since=" + std::to_string(epochMillis);
-        return makePublicCall(path);
+    std::vector<OHLC> KrakenClient::getOHLC(const long long epochNanos, const std::string pair) const {
+        const auto path = std::string(KrakenClient::url) + std::string(KrakenClient::ohlcURL) + "?pair=" + pair + "&since=" + std::to_string(epochNanos);
+        auto resultString = makePublicCall(path);
+        nlohmann::json jsonResult = parseAndThrowErrors(resultString).at(pair);
+        std::vector<OHLC> result;
+        result.reserve(jsonResult.size());
+        std::transform(jsonResult.begin(), jsonResult.end(), std::back_inserter(result), [](const nlohmann::json& item) { return item.template get<OHLC>(); });
+        return result;
     }
 
     std::string KrakenClient::buy(const std::string& pair, const std::string& volume, const std::string& type, const std::string& orderType) const {
@@ -43,17 +58,13 @@ namespace Kraken {
         };
 
         // std::string result = makePrivateCall("/0/private/AddOrder", headers, postData);
-        std::string result = "{\"error\":[],\"result\":{\"txid\":[\"OFDI5Y-332NU-XRMM2L\"],\"descr\":{\"order\":\"sell 0.01000000 ETHUSDT @ market\"}}}";
-        boost::json::value val = boost::json::parse(result);
-        boost::json::array errors = val.at("error").as_array();
-        if (!errors.empty()) {
-            throw std::runtime_error(std::string("Error buying Kraken order ") + errors.front().as_string().c_str());
-        }
+        std::string result = "{\"error\":[\"Failed\", \"txid\"],\"result\":{\"txid\":[\"OFDI5Y-332NU-XRMM2L\"],\"descr\":{\"order\":\"sell 0.01000000 ETHUSDT @ market\"}}}";
+        parseAndThrowErrors(result);
         // is it worth turning into an object?
         return result;
     }
 
-    const std::string KrakenClient::nonce() const {
+    std::string KrakenClient::nonce() const {
         return std::to_string(std::chrono::duration_cast<std::chrono::microseconds>(
                 std::chrono::system_clock::now().time_since_epoch()).count());
     }

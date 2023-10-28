@@ -18,9 +18,8 @@ set(OPENSSL_USE_STATIC_LIBS TRUE)
 find_package (OpenSSL REQUIRED)
 include_directories (${OPENSSL_INCLUDE_DIR})
 list(APPEND LIBS ${OPENSSL_LIBRARIES})
-#Jsoncpp
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(JSONCPP jsoncpp)
+#json
+find_package(nlohmann_json 3.2.0 REQUIRED)
 
 include_directories(src)
 
@@ -41,5 +40,7 @@ add_executable(CryptoTradingPlatform src/main.cpp src/exchanges/kraken/KrakenCli
         src/strategy/BaseStrategy.hpp
         src/strategy/BuyAndHold.hpp
         src/strategy/MovingAverageCrossover.hpp
+        src/exchanges/kraken/OHLC.hpp
+        src/exchanges/kraken/OHLC.cpp
 )
-TARGET_LINK_LIBRARIES(CryptoTradingPlatform LINK_PUBLIC Boost::program_options LINK_PUBLIC ${CURL_LIBRARIES} LINK_PUBLIC ${OPENSSL_LIBRARIES} LINK_PUBLIC ${JSONCPP_LINK_LIBRARIES})
+TARGET_LINK_LIBRARIES(CryptoTradingPlatform LINK_PUBLIC Boost::program_options LINK_PUBLIC ${CURL_LIBRARIES} LINK_PUBLIC ${OPENSSL_LIBRARIES} LINK_PUBLIC nlohmann_json::nlohmann_json)

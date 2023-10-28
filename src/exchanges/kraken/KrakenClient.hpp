@@ -4,6 +4,7 @@
 #include <curl/curl.h>
 
 #include "../../config/EnvReader.hpp"
+#include "OHLC.hpp"
 
 namespace Kraken {
     class KrakenClient {
@@ -13,13 +14,13 @@ namespace Kraken {
         ~KrakenClient();
         std::string getServerTime();
         std::string getBalance();
-        std::string getTradesSince(const long long epochMillis, const std::string pair = "ETHUSD") const;
+        std::vector<OHLC> getOHLC(const long long epochNanos, const std::string pair = "XETHZUSD") const;
         std::string buy(const std::string& pair, const std::string& volume, const std::string& type, const std::string& orderType) const;
     private:
         static constexpr std::string_view timeURL = "/0/public/Time";
-        static constexpr std::string_view tradesURL = "/0/public/Trades";
+        static constexpr std::string_view ohlcURL = "/0/public/OHLC";
         void Init();
-        const std::string nonce() const;
+        std::string nonce() const;
         std::string key;
         std::string secret;
         CURL* curl;
@@ -30,5 +31,6 @@ namespace Kraken {
         // TODO: try to refactor to unique_ptr
         using PostDataList = std::vector<const std::pair<std::string, std::string>>;
         std::string makePrivateCall(const std::string &pathSuffix, curl_slist *headers = nullptr, PostDataList postData = PostDataList()) const;
+
     };
 }

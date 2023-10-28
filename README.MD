@@ -19,3 +19,8 @@ I dont think we can use the interval parameter except to get the most recent dat
 Sounds like since is the way to go, aggregate it into sizes of 60 millis (thats what the example file does)
 
 ideally we should eventually have the kraken client be shared between strategies and have it with locking. but for now we'll just duplicate it
+
+## Data aggregation
+What we should do is lazily load data as we need it in one minute intervals.
+
+When loading and reading we can do both. Have our own file archive and we can read from the api when we don't see a file that exists.
