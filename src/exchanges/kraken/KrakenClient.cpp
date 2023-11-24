@@ -4,7 +4,7 @@
 
 #include "KrakenClient.hpp"
 #include "../../encryption/EncryptionHelper.hpp"
-#include "OHLC.hpp"
+#include "KrakenOHLC.hpp"
 
 namespace Kraken {
 
@@ -41,13 +41,31 @@ namespace Kraken {
         curl_easy_cleanup(curl);
     }
 
-    std::vector<OHLC> KrakenClient::getOHLC(const long long epochNanos, const std::string pair) const {
+    double KrakenClient::getTicker(const std::string &pair) const {
+        const auto path = std::string(KrakenClient::url) + std::string(KrakenClient::tickerURL) + "?pair=" + pair;
+        auto resultString = makePublicCall(path);
+        nlohmann::json jsonResult = parseAndThrowErrors(resultString).at(pair).at("c");
+        if (!jsonResult.is_array()) throw std::runtime_error("Could not parse array from ticket json result in Kraken.");
+        return std::stod(jsonResult.at(0).get<std::string>());
+    }
+
+    std::vector<KrakenTrade> KrakenClient::getTrades(const long long epochNanos, const std::string &pair) const {
+        const auto path = std::string(KrakenClient::url) + std::string(KrakenClient::tradesURL) + "?pair=" + pair + "&since=" + std::to_string(epochNanos);
+        auto resultString = makePublicCall(path);
+        nlohmann::json jsonResult = parseAndThrowErrors(resultString).at(pair);
+        std::vector<KrakenTrade> result;
+        result.reserve(jsonResult.size());
+        std::transform(jsonResult.begin(), jsonResult.end(), std::back_inserter(result), [](const nlohmann::json& item) { return item.template get<KrakenTrade>(); });
+        return result;
+    }
+
+    std::vector<std::unique_ptr<BaseOHLC>> KrakenClient::getOHLC(const long long epochNanos, const std::string& pair) const {
         const auto path = std::string(KrakenClient::url) + std::string(KrakenClient::ohlcURL) + "?pair=" + pair + "&since=" + std::to_string(epochNanos);
         auto resultString = makePublicCall(path);
         nlohmann::json jsonResult = parseAndThrowErrors(resultString).at(pair);
-        std::vector<OHLC> result;
+        std::vector<std::unique_ptr<BaseOHLC>> result;
         result.reserve(jsonResult.size());
-        std::transform(jsonResult.begin(), jsonResult.end(), std::back_inserter(result), [](const nlohmann::json& item) { return item.template get<OHLC>(); });
+        std::transform(jsonResult.begin(), jsonResult.end(), std::back_inserter(result), [](const nlohmann::json& item) { return std::make_unique<KrakenOHLC>(item.template get<KrakenOHLC>()); });
         return result;
     }
 

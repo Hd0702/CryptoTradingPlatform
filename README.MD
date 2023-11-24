@@ -1,26 +1,18 @@
 This readme is mostly just my thoughts for now. Will have full readme later
 # TODO:
-some basic strategies buy and sell based on two different moving averages
-this means our strategies should actively share data between them and should do some calculations on them
-one strategy first
+For data aggregation, we are going to save a local file with all OHLC data by pairs. We can break this up by pair. For now we will just focus on Kraken. 
 
-lets imagine we arent aware of all changes and all we know is our start price.
-our strategy will occasionally wake up after a couple of minutes, and query the exchange to get some info
+I want to move away from coinbase and multiple exchanges to keep things simple. Having one interface for OHLC data and buys/sells is so much easier to write.
 
-I guess we will probably need to know the overall picture for backtesting and stuff maybe it would be easier if we loaded all trades since my Birthday into a file
+for OHLC we can have a file for every day and it should be all the minutes for that day. To start we can go 100 days back from today.
 
-maybe to keep it small we will truncate each one down to every 1 minute? so every minute the client will wake up and recalculate.
-at system start time we save start to end of what we have done so far
+## Trades
+All trades will be logged into a file with trade id and all of their data. On start we will check our open orders and which strategy is associated for it, and look to see 
+if the sell point is happening right now.
 
-oh we can also download it from here up to a certain point https://support.kraken.com/hc/en-us/articles/360047124832-Downloadable-historical-OHLCVT-Open-High-Low-Close-Volume-Trades-data
+## Class structure
 
-I dont think we can use the interval parameter except to get the most recent data. At that point why bother
+### Data loader
 
-Sounds like since is the way to go, aggregate it into sizes of 60 millis (thats what the example file does)
+### Strategy Loader
 
-ideally we should eventually have the kraken client be shared between strategies and have it with locking. but for now we'll just duplicate it
-
-## Data aggregation
-What we should do is lazily load data as we need it in one minute intervals.
-
-When loading and reading we can do both. Have our own file archive and we can read from the api when we don't see a file that exists.

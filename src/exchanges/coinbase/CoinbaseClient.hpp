@@ -7,6 +7,7 @@
 #include "config/EnvReader.hpp"
 #include "time/Clock.hpp"
 
+// TODO: Make this extend BaseExchange
 namespace Coinbase {
 
     class CoinbaseClient {

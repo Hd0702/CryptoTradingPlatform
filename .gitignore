@@ -3,3 +3,5 @@ cmake*/
 .env
 external/
 tst/cmake*/
+exchange_files/
+*.DS_Store

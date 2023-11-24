@@ -25,10 +25,8 @@ include_directories(src)
 
 add_library(PlatformLib src/main.cpp src/exchanges/kraken/KrakenClient.hpp src/exchanges/kraken/KrakenClient.cpp src/exchanges/kraken/KrakenClient.cpp src/config/EnvReader.hpp src/config/EnvReader.cpp src/encryption/EncryptionHelper.hpp src/encryption/EncryptionHelper.cpp
         src/config/EnvReader.cpp
-        src/strategy/ActionPoint.hpp
         src/strategy/BaseStrategy.hpp
         src/strategy/BuyAndHold.hpp
-        src/strategy/MovingAverageCrossover.hpp
 )
 include(CTest)
 enable_testing()
@@ -36,11 +34,18 @@ add_subdirectory(tst)
 
 add_executable(CryptoTradingPlatform src/main.cpp src/exchanges/kraken/KrakenClient.hpp src/exchanges/kraken/KrakenClient.cpp src/exchanges/kraken/KrakenClient.cpp src/config/EnvReader.hpp src/config/EnvReader.cpp src/encryption/EncryptionHelper.hpp src/encryption/EncryptionHelper.cpp src/exchanges/coinbase/CoinbaseClient.hpp src/time/Clock.hpp src/time/Clock.cpp src/exchanges/coinbase/CoinbaseClient.cpp
         src/config/EnvReader.cpp
-        src/strategy/ActionPoint.hpp
         src/strategy/BaseStrategy.hpp
         src/strategy/BuyAndHold.hpp
-        src/strategy/MovingAverageCrossover.hpp
-        src/exchanges/kraken/OHLC.hpp
-        src/exchanges/kraken/OHLC.cpp
+        src/exchanges/kraken/KrakenOHLC.hpp
+        src/exchanges/kraken/KrakenOHLC.cpp
+        src/exchanges/BaseExchange.hpp
+        src/exchanges/BaseExchange.hpp
+        src/exchanges/BaseExchange.hpp
+        src/exchanges/BaseOHLC.hpp
+        src/strategy/BuyAndHold.cpp
+        src/TradeLineItem.hpp
+        src/exchanges/kraken/KrakenLoader.hpp
+        src/exchanges/kraken/KrakenLoader.cpp
+        src/exchanges/kraken/KrakenTrade.hpp
 )
 TARGET_LINK_LIBRARIES(CryptoTradingPlatform LINK_PUBLIC Boost::program_options LINK_PUBLIC ${CURL_LIBRARIES} LINK_PUBLIC ${OPENSSL_LIBRARIES} LINK_PUBLIC nlohmann_json::nlohmann_json)

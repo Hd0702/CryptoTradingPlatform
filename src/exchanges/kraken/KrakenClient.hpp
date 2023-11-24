@@ -4,21 +4,28 @@
 #include <curl/curl.h>
 
 #include "../../config/EnvReader.hpp"
-#include "OHLC.hpp"
+#include "../BaseExchange.hpp"
+#include "KrakenOHLC.hpp"
+#include "KrakenTrade.hpp"
 
+// TODO: Clean up these variables and add a move constructor if possible
 namespace Kraken {
-    class KrakenClient {
+    class KrakenClient final : BaseExchange {
     public:
         static constexpr std::string_view url = "https://api.kraken.com";
         explicit KrakenClient(Env::EnvReader& env_reader_instance);
         ~KrakenClient();
         std::string getServerTime();
         std::string getBalance();
-        std::vector<OHLC> getOHLC(const long long epochNanos, const std::string pair = "XETHZUSD") const;
-        std::string buy(const std::string& pair, const std::string& volume, const std::string& type, const std::string& orderType) const;
+        std::vector<KrakenTrade> getTrades(const long long epochNanos, const std::string& pair) const;
+        virtual std::vector<std::unique_ptr<BaseOHLC>> getOHLC(const long long epochNanos, const std::string& pair) const override;
+        virtual std::string buy(const std::string& pair, const std::string& volume, const std::string& type, const std::string& orderType) const override;
+        virtual double getTicker(const std::string& pair) const override;
     private:
         static constexpr std::string_view timeURL = "/0/public/Time";
         static constexpr std::string_view ohlcURL = "/0/public/OHLC";
+        static constexpr std::string_view tickerURL = "/0/public/Ticker";
+        static constexpr std::string_view tradesURL = "/0/public/Trades";
         void Init();
         std::string nonce() const;
         std::string key;

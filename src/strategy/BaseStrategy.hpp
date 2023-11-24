@@ -1,13 +1,15 @@
 #pragma once
-#include "ActionPoint.hpp"
-#include <optional>
+#include <string>
+#include "../exchanges/BaseExchange.hpp"
 
 class BaseStrategy {
-private:
-    ActionPoint buyAction;
-    ActionPoint sellAction;
-    std::optional<ActionPoint> limitAction;
-    // needs a buy point and a sell point, commodoity and exchange
-    // for knowing when to buy we need a change over time.
-    // like percent change over a time delta
+public:
+    virtual bool buy() = 0;
+    virtual bool sell() = 0;
+    // Todo: add a way to load in strategy history and if any triggers were hit since the last trade.
+protected:
+    explicit BaseStrategy(std::shared_ptr<BaseExchange> exchange_): exchange(std::move(exchange_)) {}
+    std::shared_ptr<BaseExchange> exchange;
+    std::string pair;
+    double capital;
 };
