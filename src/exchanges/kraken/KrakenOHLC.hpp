@@ -6,7 +6,7 @@
 namespace Kraken {
     class KrakenOHLC final : public BaseOHLC {
     public:
-        friend void to_json( nlohmann::json& j, KrakenOHLC& ohlc);
+        friend void to_json( nlohmann::json& j, const KrakenOHLC& ohlc);
         friend void from_json(const nlohmann::json& j, KrakenOHLC& ohlc);
         long getTime() const { return time; }
         double getOpen() const { return open; }

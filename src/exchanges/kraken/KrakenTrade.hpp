@@ -22,21 +22,21 @@ namespace Kraken {
             trade.misc = j.at(5).get<std::string>();
             trade.tradeId = j.at(6).get<long>();
         }
-        double getPrice() const { return price; }
-        double getVolume() const { return volume; }
-        double getTime() const { return time; }
-        std::string getSide() const { return side; }
-        std::string getType() const { return type; }
-        std::string getMisc() const { return misc; }
-        long getTradeId() const { return tradeId; }
+        [[nodiscard]] double getPrice() const { return price; }
+        [[nodiscard]] double getVolume() const { return volume; }
+        [[nodiscard]] double getTime() const { return time; }
+        [[nodiscard]] std::string getSide() const { return side; }
+        [[nodiscard]] std::string getType() const { return type; }
+        [[nodiscard]] std::string getMisc() const { return misc; }
+        [[nodiscard]] long getTradeId() const { return tradeId; }
 
-        double setPrice(double _price) { price = _price; }
-        double setVolume(double _volume) { volume = _volume; }
-        double setTime(double _time) { time = _time; }
-        std::string setSide(std::string _side) { side = _side; }
-        std::string setType(std::string _type) { type = _type; }
-        std::string setMisc(std::string _misc) { misc = _misc; }
-        long setTradeId(long _tradeId) { tradeId = _tradeId; }
+        void setPrice(double _price) { price = _price; }
+        void setVolume(double _volume) { volume = _volume; }
+        void setTime(double _time) { time = _time; }
+        void setSide(std::string _side) { side = _side; }
+        void setType(std::string _type) { type = _type; }
+        void voidsetMisc(std::string _misc) { misc = _misc; }
+        void setTradeId(long _tradeId) { tradeId = _tradeId; }
 
     private:
         double price;

@@ -6,30 +6,35 @@
 namespace Kraken {
     KrakenLoader::KrakenLoader(const KrakenClient& _client, const std::filesystem::path& path): client(_client), filePath(path / "kraken") {}
 
-    bool KrakenLoader::fetchData(long long int epochMilli, const std::string& pair) {
+    std::vector<KrakenOHLC> KrakenLoader::fetchData(long long int epochSeconds, const std::string&pair) {
         // check the file path for a folder by the pair and then epoch milli rounded down to the nearest m inute
-        std::chrono::milliseconds duration(epochMilli);
+        std::chrono::seconds duration(epochSeconds);
         std::chrono::hours floorHour = std::chrono::floor<std::chrono::hours>(duration);
         std::filesystem::path pairPath = filePath / pair;
         create_directories(pairPath);
         pairPath /= std::to_string(floorHour.count());
+        std::cout << "File already exists at " << filePath.c_str() << std::endl;
+        std::vector<KrakenOHLC> ohlcPoints;
+        saveHourOfTrades(floorHour, pair);
         if (std::filesystem::exists(pairPath)) {
-            std::cout << "File already exists at " << filePath.c_str() << std::endl;
-            std::filesystem::remove(pairPath);
+            std::ifstream file(pairPath);
+            if (!file.is_open()) {
+                throw std::runtime_error("File could not be opened");
+            }
+            nlohmann::json j;
+            file >> j;
+            for (auto iter = j.begin(); iter != j.end(); ++iter) {
+                KrakenOHLC obj;
+                from_json(*iter, obj); // Convert JSON array to CustomObject
+                ohlcPoints.push_back(obj);
+            }
+        } else {
+            ohlcPoints = saveHourOfTrades(floorHour, pair);
         }
-        // increments of 1 minute. We'll save each file by the beggining of the hour. We get 12 hours per API call
-        auto ohlcPoints = client.getTrades(std::chrono::duration_cast<std::chrono::milliseconds>(floorHour).count(), pair);
-        // now we have to aggregate the trades into increments of 1 minute and save. Keep loading API calls until we have 1 hour worth of data.
-        if (std::ofstream file(pairPath); file.is_open()) {
-            std::cout << "File created at path: " << pairPath.c_str() << std::endl;
-            // Optionally, you can write to the file here if needed.
-            file << "Hello, File!" << std::endl;
-            file.close();
-        }
-        return true;
+        return ohlcPoints;
     }
 
-    void KrakenLoader::saveHourOfTrades(std::chrono::hours hour, const std::string&pair) {
+    std::vector<KrakenOHLC> KrakenLoader::saveHourOfTrades(std::chrono::hours hour, const std::string&pair) {
         // reads trades for the next hour and saves them to a file
         std::chrono::milliseconds startMillis = std::chrono::duration_cast<std::chrono::milliseconds>(hour);
         std::vector<KrakenTrade> trades = client.getTrades(startMillis.count(), pair);
@@ -49,11 +54,17 @@ namespace Kraken {
         create_directories(pairPath);
         pairPath /= std::to_string(hour.count());
         if (std::ofstream file(pairPath); file.is_open()) {
+            nlohmann::json j_vec;
+            std::ranges::for_each(ohlcPoints, [&](const KrakenOHLC& ohlc) {
+                const nlohmann::json json_obj = ohlc;
+                j_vec.push_back(json_obj);
+            });
             std::cout << "File created at path: " << pairPath.c_str() << std::endl;
             // Optionally, you can write to the file here if needed.
-            file << "Hello, File!" << std::endl;
+            file << std::setw(4) << j_vec << std::endl;
             file.close();
         }
+        return ohlcPoints;
     }
 
 
@@ -75,6 +86,7 @@ namespace Kraken {
                 nextMinute += std::chrono::minutes(1);
                 if (count != 0) {
                     average.setVwap(average.getVwap() / count);
+                    average.setCount(count);
                     result.push_back(average);
                 }
                 average = KrakenOHLC();

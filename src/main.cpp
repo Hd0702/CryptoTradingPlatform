@@ -9,6 +9,7 @@ int main() {
     Kraken::KrakenClient kclient = Kraken::KrakenClient(env_reader);
     Coinbase::CoinbaseClient cclient = Coinbase::CoinbaseClient(env_reader, Clock());
     Kraken::KrakenLoader loader(kclient, "exchange_files");
+    kclient.getOHLC(1559350785297011117L, "XETHZUSD");
     loader.fetchData(1700488979LL, "XETHZUSD");
 //    std::string response = "sfasf";
 //    auto now = std::chrono::system_clock::now();
