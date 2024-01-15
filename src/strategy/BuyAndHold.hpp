@@ -8,6 +8,7 @@ public:
     explicit BuyAndHold(std::shared_ptr<BaseExchange> exchange);
     virtual bool buy() override;
     virtual bool sell() override;
+
 };
 
 

@@ -10,7 +10,7 @@ namespace Kraken {
         std::vector<KrakenOHLC> fetchData(long long int epochSeconds, const std::string&pair);
 
     private:
-        std::vector<KrakenOHLC> aggregateTradesInMinutes(const std::vector<KrakenTrade>&trades) const;
+        [[nodiscard]] std::vector<KrakenOHLC> aggregateTradesInMinutes(const std::vector<KrakenTrade>&trades) const;
 
         std::vector<KrakenOHLC> saveHourOfTrades(std::chrono::hours hour, const std::string&pair);
         std::filesystem::path filePath;

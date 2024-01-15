@@ -3,6 +3,9 @@
 #include <nlohmann/json.hpp>
 
 #include "KrakenClient.hpp"
+
+#include <iostream>
+
 #include "../../encryption/EncryptionHelper.hpp"
 #include "KrakenOHLC.hpp"
 
@@ -49,8 +52,8 @@ namespace Kraken {
         return std::stod(jsonResult.at(0).get<std::string>());
     }
 
-    std::vector<KrakenTrade> KrakenClient::getTrades(const long long epochNanos, const std::string &pair) const {
-        const auto path = std::string(KrakenClient::url) + std::string(KrakenClient::tradesURL) + "?pair=" + pair + "&since=" + std::to_string(epochNanos);
+    std::vector<KrakenTrade> KrakenClient::getTrades(const long long epochSeconds, const std::string &pair) const {
+        const auto path = std::string(KrakenClient::url) + std::string(KrakenClient::tradesURL) + "?pair=" + pair + "&since=" + std::to_string(epochSeconds);
         auto resultString = makePublicCall(path);
         nlohmann::json jsonResult = parseAndThrowErrors(resultString).at(pair);
         std::vector<KrakenTrade> result;
@@ -58,6 +61,25 @@ namespace Kraken {
         std::transform(jsonResult.begin(), jsonResult.end(), std::back_inserter(result), [](const nlohmann::json& item) { return item.template get<KrakenTrade>(); });
         return result;
     }
+
+    std::map<std::string, KrakenTradeInfo> KrakenClient::getTradeInfo(const std::vector<std::string>&txIds) const {
+        int chunked = 0;
+        std::map<std::string, KrakenTradeInfo> result;
+        while (chunked < txIds.size()) {
+            int group = std::min(20, static_cast<int>(txIds.size()) - chunked);
+            auto start = txIds.cbegin() + chunked;
+            auto end = txIds.cbegin() + chunked + group;
+            std::string txIdsString = std::accumulate(start, end, std::string(), [](const std::string& accum, const std::string& txId) { return accum + txId + ","; });
+            txIdsString.pop_back();
+            chunked += 20;
+            auto resultString = makePrivateCall(std::string(KrakenClient::queryTradeURL), nullptr, {std::make_pair("txid", txIdsString)});
+            nlohmann::json jsonResult = parseAndThrowErrors(resultString);
+            std::map<std::string, KrakenTradeInfo> smallResult = jsonResult.get<std::map<std::string, KrakenTradeInfo>>();
+            result.insert(std::make_move_iterator(smallResult.begin()), std::make_move_iterator(smallResult.end()));
+        }
+        return result;
+    }
+
 
     std::vector<std::unique_ptr<BaseOHLC>> KrakenClient::getOHLC(const long long epochNanos, const std::string& pair) const {
         const auto path = std::string(KrakenClient::url) + std::string(KrakenClient::ohlcURL) + "?pair=" + pair + "&since=" + std::to_string(epochNanos);

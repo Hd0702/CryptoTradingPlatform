@@ -47,5 +47,9 @@ add_executable(CryptoTradingPlatform src/main.cpp src/exchanges/kraken/KrakenCli
         src/exchanges/kraken/KrakenLoader.hpp
         src/exchanges/kraken/KrakenLoader.cpp
         src/exchanges/kraken/KrakenTrade.hpp
+        src/strategy/moving_average/MovingAverageCrossover.cpp
+        src/strategy/moving_average/MovingAverageCrossover.hpp
+        src/strategy/moving_average/MovingAverageTrade.hpp
+        src/exchanges/kraken/KrakenTradeInfo.hpp
 )
 TARGET_LINK_LIBRARIES(CryptoTradingPlatform LINK_PUBLIC Boost::program_options LINK_PUBLIC ${CURL_LIBRARIES} LINK_PUBLIC ${OPENSSL_LIBRARIES} LINK_PUBLIC nlohmann_json::nlohmann_json)

@@ -1,1 +1,0 @@
-#include "MovingAverageCrossover.hpp"

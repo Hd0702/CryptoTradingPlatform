@@ -36,8 +36,8 @@ namespace Kraken {
 
     std::vector<KrakenOHLC> KrakenLoader::saveHourOfTrades(std::chrono::hours hour, const std::string&pair) {
         // reads trades for the next hour and saves them to a file
-        std::chrono::milliseconds startMillis = std::chrono::duration_cast<std::chrono::milliseconds>(hour);
-        std::vector<KrakenTrade> trades = client.getTrades(startMillis.count(), pair);
+        std::chrono::seconds startSeconds = std::chrono::duration_cast<std::chrono::seconds>(hour);
+        std::vector<KrakenTrade> trades = client.getTrades(startSeconds.count(), pair);
         auto ohlcPoints = aggregateTradesInMinutes(trades);
         // feeling lazy, so for now we just calculate size of ohlc points to know how many we have
         while (ohlcPoints.size() < 60) {
@@ -83,12 +83,13 @@ namespace Kraken {
             average.setVolume(average.getVolume() + trade.getVolume());
             ++count;
             if (std::chrono::minutes(static_cast<int>(trade.getTime())) >= nextMinute) {
-                nextMinute += std::chrono::minutes(1);
                 if (count != 0) {
                     average.setVwap(average.getVwap() / count);
                     average.setCount(count);
+                    average.setTime(std::chrono::duration_cast<std::chrono::seconds>(nextMinute).count());
                     result.push_back(average);
                 }
+                nextMinute += std::chrono::minutes(1);
                 average = KrakenOHLC();
                 count = 0;
             }

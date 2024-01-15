@@ -8,14 +8,14 @@ namespace Kraken {
     public:
         friend void to_json( nlohmann::json& j, const KrakenOHLC& ohlc);
         friend void from_json(const nlohmann::json& j, KrakenOHLC& ohlc);
-        long getTime() const { return time; }
-        double getOpen() const { return open; }
-        double getHigh() const { return high; }
-        double getLow() const { return low; }
-        double getClose() const { return close; }
-        double getVwap() const { return vwap; }
-        double getVolume() const { return volume; }
-        long getCount() const { return count; }
+        [[nodiscard]] long getTime() const { return time; }
+        [[nodiscard]] double getOpen() const { return open; }
+        [[nodiscard]] double getHigh() const { return high; }
+        [[nodiscard]] double getLow() const { return low; }
+        [[nodiscard]] double getClose() const { return close; }
+        [[nodiscard]] double getVwap() const { return vwap; }
+        [[nodiscard]] double getVolume() const { return volume; }
+        [[nodiscard]] long getCount() const { return count; }
 
         void setTime(long _time) { time = _time; }
         void setOpen(double _open) { open = _open; }

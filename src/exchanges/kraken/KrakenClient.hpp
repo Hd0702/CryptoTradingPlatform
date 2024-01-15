@@ -7,6 +7,7 @@
 #include "../BaseExchange.hpp"
 #include "KrakenOHLC.hpp"
 #include "KrakenTrade.hpp"
+#include "KrakenTradeInfo.hpp"
 
 // TODO: Clean up these variables and add a move constructor if possible
 namespace Kraken {
@@ -17,7 +18,9 @@ namespace Kraken {
         ~KrakenClient();
         std::string getServerTime();
         std::string getBalance();
-        std::vector<KrakenTrade> getTrades(const long long epochNanos, const std::string& pair) const;
+        std::vector<KrakenTrade> getTrades(const long long epochSeconds, const std::string& pair) const;
+
+        std::map<std::string, KrakenTradeInfo> getTradeInfo(const std::vector<std::string>&txIds) const;
         virtual std::vector<std::unique_ptr<BaseOHLC>> getOHLC(const long long epochNanos, const std::string& pair) const override;
         virtual std::string buy(const std::string& pair, const std::string& volume, const std::string& type, const std::string& orderType) const override;
         virtual double getTicker(const std::string& pair) const override;
@@ -26,6 +29,7 @@ namespace Kraken {
         static constexpr std::string_view ohlcURL = "/0/public/OHLC";
         static constexpr std::string_view tickerURL = "/0/public/Ticker";
         static constexpr std::string_view tradesURL = "/0/public/Trades";
+        static constexpr std::string_view queryTradeURL = "/0/private/QueryTrades";
         void Init();
         std::string nonce() const;
         std::string key;
