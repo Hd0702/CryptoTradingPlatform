@@ -2,16 +2,13 @@
 #include "../BaseStrategy.hpp"
 #include <string>
 
+#include "MovingAverageTrade.hpp"
+#include "exchanges/kraken/KrakenClient.hpp"
+#include "exchanges/kraken/KrakenLoader.hpp"
+
 namespace Kraken {
-    class MovingAverageCrossover final: public BaseStrategy {
+    class MovingAverageCrossover final {// maybe do this later : public BaseStrategy {
         // each individual trade
-        struct MovingAverageTrade {
-            long marketOrderId;
-            long limitOrderId;
-            long firstWindow;
-            long secondWindow;
-            std::string pair;
-        };
     /**
     Plan on how I get this to work.
     1. First thing is we need to load in all existing strategies that are in flight.
@@ -24,10 +21,14 @@ namespace Kraken {
         - We can make this work by accepting a timestamp in our check function. This is like a local override if needed, otherwise we just get the current OHLC and/or trades.
     **/
     public:
-        explicit MovingAverageCrossover(std::shared_ptr<BaseExchange> exchange);
-        virtual bool buy() override;
-        virtual bool sell() override;
+        explicit MovingAverageCrossover(const KrakenClient& exchange);
+        bool buy();
+        bool sell();
         std::vector<MovingAverageTrade> loadInFlightTrades();
+        void check(std::vector<MovingAverageTrade> trades);
         void buyOrSell();
+    private:
+        const KrakenClient& exchange;
+        const KrakenLoader loader;
     };
 }

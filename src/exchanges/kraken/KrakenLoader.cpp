@@ -56,8 +56,7 @@ namespace Kraken {
         if (std::ofstream file(pairPath); file.is_open()) {
             nlohmann::json j_vec;
             std::ranges::for_each(ohlcPoints, [&](const KrakenOHLC& ohlc) {
-                const nlohmann::json json_obj = ohlc;
-                j_vec.push_back(json_obj);
+                j_vec.push_back(ohlc);
             });
             std::cout << "File created at path: " << pairPath.c_str() << std::endl;
             // Optionally, you can write to the file here if needed.

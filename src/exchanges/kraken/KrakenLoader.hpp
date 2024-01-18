@@ -4,7 +4,7 @@
 namespace Kraken {
     class KrakenLoader {
     public:
-        explicit KrakenLoader(const KrakenClient& _client, const std::filesystem::path& = "data_dir/kraken");
+        explicit KrakenLoader(const KrakenClient& _client, const std::filesystem::path& = "exchange_files");
 
         // TODO: Make this chrono?
         std::vector<KrakenOHLC> fetchData(long long int epochSeconds, const std::string&pair);

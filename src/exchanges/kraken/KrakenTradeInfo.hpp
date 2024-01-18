@@ -1,6 +1,6 @@
 #pragma once
 #include <string>
-class KrakenTradeInfo {
+struct KrakenTradeInfo {
     std::string ordertxid;
     std::string postxid;
     std::string pair;
@@ -23,7 +23,6 @@ class KrakenTradeInfo {
     std::optional<std::string> cmargin;
     std::optional<std::string> net;
     std::optional<std::string> trades;
-public:
     // I wished nlohmann library supported optionals. *sigh*
     // once this is merged we should be good https://github.com/nlohmann/json/pull/2117/files
     friend void from_json(const nlohmann::json& j, KrakenTradeInfo& trade) {

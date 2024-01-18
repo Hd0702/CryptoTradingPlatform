@@ -1,10 +1,9 @@
 #include "MovingAverageCrossover.hpp"
-#include <filesystem>
 #include <fstream>
-#include <nlohmann/json.hpp>
+#include <ranges>
 
 namespace Kraken {
-    MovingAverageCrossover::MovingAverageCrossover(std::shared_ptr<BaseExchange> ex): BaseStrategy(ex) {}
+    MovingAverageCrossover::MovingAverageCrossover(const KrakenClient& exchange): exchange(exchange), loader(KrakenLoader(exchange)) {}
 
     bool MovingAverageCrossover::buy() {
         throw std::logic_error("Function not implemented yet");
@@ -14,32 +13,26 @@ namespace Kraken {
         throw std::logic_error("Function not implemented yet");
     }
 
-    std::vector<MovingAverageCrossover::MovingAverageTrade> MovingAverageCrossover::loadInFlightTrades() {
-        // first thing is we load in all transactions to see how much of that asset we have that wasn't sold
-        // The end of this we should know how much of the asset we have. Then we can call check.
-        // std::filesystem::path path = "trades/kraken/moving_average.json";
-        // std::vector<MovingAverageCrossover::MovingAverageTrade> trades;
-        // if (std::filesystem::exists(path)) {
-        //     std::ifstream file(path);
-        //     nlohmann::json j;
-        //     file >> j;
-        //     for (auto iter = j.begin(); iter != j.end(); ++iter) {
-        //         MovingAverageTrade obj;
-        //         from_json(*iter, obj); // Convert JSON array to CustomObject
-        //         trades.push_back(obj);
-        //     }
-        // }
-        // 1. Check each order in the list to see if the limit order was filled. If not then we have the opportunity to fill it ourselves
-        // 2. for each order, check back how ever many time points for the two windows. This should return what the current moving average is.
-        // 3. still iteratiing over each order, check if the sell moving average was hit.
+    std::vector<MovingAverageTrade> MovingAverageCrossover::loadInFlightTrades() {
+        // load in existing trades from the exchange
+        const nlohmann::json j = nlohmann::json::parse(std::ifstream("exchange_files/kraken/trades"));
+        auto trades = j.get<std::vector<MovingAverageTrade>>();
+        // check to see if limits have closed
+        const auto limitOrders = exchange.getTradeInfo(
+            std::transform_reduce(trades.cbegin(), trades.cend(), std::vector<std::string>(), [](std::vector<std::string>& accum, const MovingAverageTrade& trade) {
+                accum.push_back(std::to_string(trade.limitOrderId));
+                return accum;
+            }, std::plus()));
+        auto openTrades = trades | std::views::filter([&](const MovingAverageTrade& trade) {
+            const auto limitOrderString = std::to_string(trade.limitOrderId);
+            return limitOrders.contains(limitOrderString) && limitOrders.at(limitOrderString).posstatus == "open";
+        });
+        return {openTrades.begin(), openTrades.end()};
+    }
 
-        // buying workflow
-        // 1. Iterate through a set of pre-determined moving averages for now.
-        // 2. calculate the OHLC from the last few data points to see if a buy it hit.
-
-        // How to manage capital
-        // For now I think it's okay to assume each trade is $20 USD to start.
-
+    void MovingAverageCrossover::check(std::vector<MovingAverageTrade> trades) {
+        // now that we have the trades that are open we need to load in the previous x amount of hours for each window.
+        // check if they crossed over in the last hour. If so we sell or buy depending on the direction of the crossover.
     }
 
     void MovingAverageCrossover::buyOrSell() {
