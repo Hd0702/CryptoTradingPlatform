@@ -9,9 +9,10 @@ int main() {
     Kraken::KrakenClient kclient = Kraken::KrakenClient(env_reader);
     Coinbase::CoinbaseClient cclient = Coinbase::CoinbaseClient(env_reader, Clock());
     auto items = kclient.getTradeInfo({"TG3PXU-WIYH3-ZJY44V", "TUBBK6-6CPHX-K4S3UO"});
+    Kraken::KrakenLoader loader(kclient, "exchange_files");
+    const auto currentHour = std::chrono::floor<std::chrono::hours>(std::chrono::system_clock::now().time_since_epoch());
+    const auto  others = loader.fetchData(currentHour, "XETHZUSD");
     return 0;
-    // Kraken::KrakenLoader loader(kclient, "exchange_files");
-    // loader.fetchData(1439517931LL, "XETHZUSD");
 //    std::string response = "sfasf";
 //    auto now = std::chrono::system_clock::now();
 //    const auto oneDayAgo = now - std::chrono::hours(24);

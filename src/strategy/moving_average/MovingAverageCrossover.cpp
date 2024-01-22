@@ -19,10 +19,10 @@ namespace Kraken {
         auto trades = j.get<std::vector<MovingAverageTrade>>();
         // check to see if limits have closed
         const auto limitOrders = exchange.getTradeInfo(
-            std::transform_reduce(trades.cbegin(), trades.cend(), std::vector<std::string>(), [](std::vector<std::string>& accum, const MovingAverageTrade& trade) {
+            std::reduce(trades.cbegin(), trades.cend(), std::vector<std::string>(), [](std::vector<std::string>& accum, const MovingAverageTrade& trade) {
                 accum.push_back(std::to_string(trade.limitOrderId));
                 return accum;
-            }, std::plus()));
+            }));
         auto openTrades = trades | std::views::filter([&](const MovingAverageTrade& trade) {
             const auto limitOrderString = std::to_string(trade.limitOrderId);
             return limitOrders.contains(limitOrderString) && limitOrders.at(limitOrderString).posstatus == "open";
@@ -30,9 +30,15 @@ namespace Kraken {
         return {openTrades.begin(), openTrades.end()};
     }
 
+    // only exists for selling purpopses
     void MovingAverageCrossover::check(std::vector<MovingAverageTrade> trades) {
         // now that we have the trades that are open we need to load in the previous x amount of hours for each window.
         // check if they crossed over in the last hour. If so we sell or buy depending on the direction of the crossover.
+        std::ranges::for_each(trades, [&](const MovingAverageTrade& trade) {
+            const auto largerWindow = std::max(trade.firstWindow, trade.secondWindow);
+            const auto currentHour = std::chrono::floor<std::chrono::hours>(std::chrono::system_clock::now().time_since_epoch());
+
+        });
     }
 
     void MovingAverageCrossover::buyOrSell() {
