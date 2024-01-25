@@ -25,9 +25,10 @@ namespace Kraken {
         bool buy();
         bool sell();
         std::vector<MovingAverageTrade> loadInFlightTrades();
-        void check(std::vector<MovingAverageTrade> trades);
+        bool check(std::vector<MovingAverageTrade> trades);
         void buyOrSell();
     private:
+        double getVwap(std::vector<KrakenOHLC> ohlcPoints) const;
         const KrakenClient& exchange;
         const KrakenLoader loader;
     };

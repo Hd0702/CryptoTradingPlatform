@@ -39,32 +39,35 @@ namespace Kraken {
         return ohlcPoints;
     }
 
-
+    // we should probably unit test this
     std::vector<KrakenOHLC> KrakenLoader::aggregateTradesInMinutes(const std::vector<KrakenTrade>&trades) const {
         std::chrono::milliseconds duration(static_cast<int>(trades.at(0).getTime()));
         std::chrono::minutes nextMinute = std::chrono::ceil<std::chrono::minutes>(duration);
         KrakenOHLC average{};
         int count = 0;
+        double volume = 0;
         std::vector<KrakenOHLC> result;
         // get average for each minute
         std::ranges::for_each(trades, [&](const KrakenTrade& trade) {
             if (count == 0) average.setOpen(trade.getPrice());
             if (trade.getPrice() > average.getHigh()) average.setHigh(trade.getPrice());
             if (trade.getPrice() < average.getLow()) average.setLow(trade.getPrice());
+            volume += trade.getVolume();
             average.setClose(trade.getPrice());
-            average.setVwap(average.getVwap() + trade.getPrice());
+            average.setVwap(average.getVwap() + trade.getPrice() * trade.getVolume());
             average.setVolume(average.getVolume() + trade.getVolume());
             ++count;
             if (std::chrono::minutes(static_cast<int>(trade.getTime())) >= nextMinute) {
                 if (count != 0) {
-                    average.setVwap(average.getVwap() / count);
+                    average.setVwap(average.getVwap() / volume);
                     average.setCount(count);
                     average.setTime(std::chrono::duration_cast<std::chrono::seconds>(nextMinute).count());
                     result.push_back(average);
+                    count = 0;
+                    volume = 0;
                 }
                 nextMinute += std::chrono::minutes(1);
                 average = KrakenOHLC();
-                count = 0;
             }
         });
         return result;
