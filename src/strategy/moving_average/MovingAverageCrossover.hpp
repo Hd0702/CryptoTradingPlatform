@@ -1,6 +1,4 @@
 #pragma once
-#include "../BaseStrategy.hpp"
-#include <string>
 
 #include "MovingAverageTrade.hpp"
 #include "exchanges/kraken/KrakenClient.hpp"
@@ -22,13 +20,14 @@ namespace Kraken {
     **/
     public:
         explicit MovingAverageCrossover(const KrakenClient& exchange);
-        bool buy();
-        bool sell();
-        std::vector<MovingAverageTrade> loadInFlightTrades();
-        bool check(std::vector<MovingAverageTrade> trades);
+        void buy();
+        void sell();
+        [[nodiscard]] std::vector<MovingAverageTrade> loadInFlightTrades();
+
+        [[nodiscard]] bool check(const std::pair<int, int>&trade, const std::string& pair, bool buy = false) const;
         void buyOrSell();
     private:
-        double getVwap(std::vector<KrakenOHLC> ohlcPoints) const;
+        [[nodiscard]] double getVwap(const std::vector<KrakenOHLC>& ohlcPoints) const;
         const KrakenClient& exchange;
         const KrakenLoader loader;
     };

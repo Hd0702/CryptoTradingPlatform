@@ -14,5 +14,7 @@ struct MovingAverageTrade {
     long secondWindow;
     // name of the asset pair
     std::string pair;
+    // amount of the asset pair
+    double amount;
     NLOHMANN_DEFINE_TYPE_INTRUSIVE(MovingAverageTrade, marketOrderId, limitOrderId, firstWindow, secondWindow, pair)
 };
