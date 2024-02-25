@@ -7,7 +7,7 @@ namespace Kraken {
     KrakenLoader::KrakenLoader(const KrakenClient& _client, const std::filesystem::path& path): client(_client), filePath(path / "kraken") {}
 
     // Aggregates trades into minutes and saves them to a file
-    std::vector<KrakenOHLC> KrakenLoader::saveHourOfTrades(std::chrono::hours hour, const std::string&pair) {
+    std::vector<KrakenOHLC> KrakenLoader::saveHourOfTrades(std::chrono::hours hour, const std::string&pair) const {
         // reads trades for the next hour and saves them to a file
         std::chrono::seconds startSeconds = std::chrono::duration_cast<std::chrono::seconds>(hour);
         std::vector<KrakenTrade> trades = client.getTrades(startSeconds.count(), pair);

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.26.4)
 project(CryptoTradingPlatform)
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 
 # Boost
 find_package(Boost 1.81 COMPONENTS program_options REQUIRED)
@@ -52,5 +52,6 @@ add_executable(CryptoTradingPlatform src/main.cpp src/exchanges/kraken/KrakenCli
         src/strategy/moving_average/MovingAverageTrade.hpp
         src/exchanges/kraken/KrakenTradeInfo.hpp
         src/time/time_concepts.hpp
+        src/exchanges/kraken/KrakenOrder.hpp
 )
 TARGET_LINK_LIBRARIES(CryptoTradingPlatform LINK_PUBLIC Boost::program_options LINK_PUBLIC ${CURL_LIBRARIES} LINK_PUBLIC ${OPENSSL_LIBRARIES} LINK_PUBLIC nlohmann_json::nlohmann_json)

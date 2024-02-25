@@ -12,6 +12,7 @@ namespace Kraken {
 
     MovingAverageCrossover::MovingAverageCrossover(const KrakenClient& exchange): exchange(exchange), loader(KrakenLoader(exchange)) {}
 
+    // NEXT STEP IS MAKING THE BUY METHOD RETURN AN OBJECT INSTEAD OF A RAW STRING THEN WE CAN DO THIS AUTOMATED BUY LOGIC
     void MovingAverageCrossover::buy() {
         // wrap windows around an std::views
         const auto trades = windows | std::views::filter([&](const auto& window) {
@@ -33,11 +34,13 @@ namespace Kraken {
         const auto tradeToSell = inFlightTrades | std::views::transform([&](const MovingAverageTrade& trade) {
             return check({trade.firstWindow, trade.secondWindow}, trade.pair, false);
         });
-        assert(tradeToSell.size() == inFlightTrades.size(), "Trade to sell size does not match in flight trades size");
+        assert(tradeToSell.size() == inFlightTrades.size() && "Trade to sell size does not match in flight trades size");
         const auto sequence = std::views::iota(0, static_cast<int>(inFlightTrades.size()))
         | std::views::filter([&](int index) { return tradeToSell[index]; })
-        | std::views::transform([&](int index) { return inFlightTrades[index]; });
-        for (const MovingAverageTrade& trade : sequence) {
+        | std::views::transform([&](int index) { return inFlightTrades[index]; })
+        | std::ranges::to<std::vector<MovingAverageTrade>>();
+        // itereate over the sequence
+        for (const auto& trade : sequence) {
             std::cout << "Selling " << trade.amount << " of " << trade.pair << " at market price" << std::endl;
             exchange.buy(trade.pair, std::to_string(trade.amount), "sell", "market");
             // we should probably delete the old file entry here
@@ -50,11 +53,12 @@ namespace Kraken {
         const nlohmann::json j = nlohmann::json::parse(std::ifstream("exchange_files/kraken/trades/moving_average_trades.json"));
         auto trades = j.get<std::vector<MovingAverageTrade>>();
         // check to see if limits have closed
+        const std::vector<std::string> vec = trades | std::views::transform([&](const MovingAverageTrade& trade) { return std::to_string(trade.limitOrderId); }) | std::ranges::to<std::vector<std::string>>();
+        const auto orders = exchange.getTradeInfo(vec);
         const auto limitOrders = exchange.getTradeInfo(
-            std::reduce(trades.cbegin(), trades.cend(), std::vector<std::string>(), [](std::vector<std::string>& accum, const MovingAverageTrade& trade) {
-                accum.push_back(std::to_string(trade.limitOrderId));
-                return accum;
-            }));
+            trades | std::views::transform([&](const MovingAverageTrade& trade) { return std::to_string(trade.limitOrderId); })
+            | std::ranges::to<std::vector<std::string>>()
+        );
         auto openTrades = trades | std::views::filter([&](const MovingAverageTrade& trade) {
             const auto limitOrderString = std::to_string(trade.limitOrderId);
             return limitOrders.contains(limitOrderString) && limitOrders.at(limitOrderString).posstatus == "open";
@@ -107,9 +111,12 @@ namespace Kraken {
     }
 
     double MovingAverageCrossover::getVwap(const std::vector<KrakenOHLC>& ohlcPoints) const {
-        const auto [price, volume] = std::reduce(ohlcPoints.cbegin(), ohlcPoints.cend(), std::array{0.0, 0.0}, [](std::array<double, 2> priceAndVolume, const KrakenOHLC& ohlc) {
-            // vwap is acting as price since we don't have individual trades here. Just data aggregated by minute
-            return {priceAndVolume[0] + ohlc.getVwap(), priceAndVolume[1] + ohlc.getVolume()};
+        const auto [price, volume] = std::reduce(
+            ohlcPoints.cbegin(),
+            ohlcPoints.cend(),
+            std::array{0.0, 0.0}, [](std::array<double, 2> priceAndVolume, const KrakenOHLC& ohlc) -> std::array<double, 2> {
+                // vwap is acting as price since we don't have individual trades here. Just data aggregated by minute
+                return {priceAndVolume[0] + ohlc.getVwap(), priceAndVolume[1] + ohlc.getVolume()};
         });
         return price / volume;
     }

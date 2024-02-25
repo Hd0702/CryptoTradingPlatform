@@ -91,17 +91,18 @@ namespace Kraken {
         return result;
     }
 
-    std::string KrakenClient::buy(const std::string& pair, const std::string& volume, const std::string& type, const std::string& orderType) const {
+    KrakenOrder KrakenClient::buy(const std::string& pair, const std::string& volume, const std::string& type, const std::string& orderType) const {
         curl_slist* headers = nullptr;
         std::vector<const std::pair<std::string, std::string>> postData = {
                 std::make_pair("pair", pair), std::make_pair("volume",  volume), std::make_pair("type", type), std::make_pair("ordertype", orderType)
         };
 
         // std::string result = makePrivateCall("/0/private/AddOrder", headers, postData);
-        std::string result = "{\"error\":[\"Failed\", \"txid\"],\"result\":{\"txid\":[\"OFDI5Y-332NU-XRMM2L\"],\"descr\":{\"order\":\"sell 0.01000000 ETHUSDT @ market\"}}}";
-        parseAndThrowErrors(result);
+        //std::string result = "{\"error\":[\"Failed\", \"txid\"],\"result\":{\"txid\":[\"OFDI5Y-332NU-XRMM2L\"],\"descr\":{\"order\":\"sell 0.01000000 ETHUSDT @ market\"}}}";
+        std::string result = "{\"error\":[],\"result\":{\"txid\":[\"OFDI5Y-332NU-XRMM2L\"],\"descr\":{\"order\":\"sell 0.01000000 ETHUSDT @ market\"}}}";
+        nlohmann::json jsonResult = parseAndThrowErrors(result);
         // is it worth turning into an object?
-        return result;
+        return jsonResult.get<KrakenOrder>();
     }
 
     std::string KrakenClient::nonce() const {
