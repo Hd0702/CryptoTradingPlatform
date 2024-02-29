@@ -1,6 +1,7 @@
 #include "MovingAverageCrossover.hpp"
 #include <fstream>
 #include <ranges>
+#include <algorithm>
 
 namespace Kraken {
     // We should just verify these with backtesting or even better to make it dynamic one day
@@ -12,10 +13,9 @@ namespace Kraken {
 
     MovingAverageCrossover::MovingAverageCrossover(const KrakenClient& exchange): exchange(exchange), loader(KrakenLoader(exchange)) {}
 
-    // NEXT STEP IS MAKING THE BUY METHOD RETURN AN OBJECT INSTEAD OF A RAW STRING THEN WE CAN DO THIS AUTOMATED BUY LOGIC
     void MovingAverageCrossover::buy() {
         // wrap windows around an std::views
-        const auto trades = windows | std::views::filter([&](const auto& window) {
+        const auto newTrades = windows | std::views::filter([&](const auto& window) {
             return check(window, "XETHZUSD", true);
         }) | std::views::transform([&](const auto& window) {
             // start with dummy value
@@ -24,9 +24,23 @@ namespace Kraken {
             tradeInfo.secondWindow = window.second;
             tradeInfo.pair = "XETHZUSD";
             tradeInfo.amount = 0.01;
-            // TODO: make the buy client call wrapped in a json object
+            const KrakenOrder buyOrder = exchange.buy(tradeInfo.pair, std::to_string(tradeInfo.amount), "buy", "market");
+            if (buyOrder.txid.size() > 1) {
+                throw std::invalid_argument(std::format("We should only have one buy order but we have {}", buyOrder.txid.size()));
+            }
+            tradeInfo.marketOrderId = buyOrder.txid[0];
+            const auto sellOrder = exchange.buy(tradeInfo.pair, std::to_string(tradeInfo.amount), "sell", "limit");
+            if (sellOrder.txid.size() > 1) {
+                throw std::invalid_argument(std::format("We should only have one sell order but we have {}", sellOrder.txid.size()));
+            }
+            tradeInfo.limitOrderId = sellOrder.txid[0];
             return tradeInfo;
+        }) | std::ranges::to<std::vector<MovingAverageTrade>>();
+        std::ranges::for_each(newTrades, [&](const MovingAverageTrade& trade) {
+            std::ofstream file("exchange_files/kraken/trades/moving_average/" + trade.marketOrderId);
+            file << nlohmann::json(trade);
         });
+
     }
 
     void MovingAverageCrossover::sell() {
@@ -40,28 +54,32 @@ namespace Kraken {
         | std::views::transform([&](int index) { return inFlightTrades[index]; })
         | std::ranges::to<std::vector<MovingAverageTrade>>();
         // itereate over the sequence
-        for (const auto& trade : sequence) {
+        for (const MovingAverageTrade& trade : sequence) {
             std::cout << "Selling " << trade.amount << " of " << trade.pair << " at market price" << std::endl;
             exchange.buy(trade.pair, std::to_string(trade.amount), "sell", "market");
-            // we should probably delete the old file entry here
+            std::filesystem::remove("exchange_files/kraken/trades/moving_average/" + trade.marketOrderId);
         }
     }
 
     std::vector<MovingAverageTrade> MovingAverageCrossover::loadInFlightTrades() {
         // load in existing trades from the exchange
         // TODO: move this to a folder so we dont have to read the whole thing all of the time.
-        const nlohmann::json j = nlohmann::json::parse(std::ifstream("exchange_files/kraken/trades/moving_average_trades.json"));
-        auto trades = j.get<std::vector<MovingAverageTrade>>();
+        std::vector<MovingAverageTrade> trades;
+        for (const auto& file: std::filesystem::directory_iterator("exchange_files/kraken/trades/moving_average/")) {
+            const nlohmann::json j = nlohmann::json::parse(std::ifstream(file.path()));
+            trades.push_back(j.get<MovingAverageTrade>());
+        }
         // check to see if limits have closed
-        const std::vector<std::string> vec = trades | std::views::transform([&](const MovingAverageTrade& trade) { return std::to_string(trade.limitOrderId); }) | std::ranges::to<std::vector<std::string>>();
+        const std::vector<std::string> vec = trades
+        | std::views::transform([&](const MovingAverageTrade& trade) { return trade.limitOrderId; })
+        | std::ranges::to<std::vector<std::string>>();
         const auto orders = exchange.getTradeInfo(vec);
         const auto limitOrders = exchange.getTradeInfo(
-            trades | std::views::transform([&](const MovingAverageTrade& trade) { return std::to_string(trade.limitOrderId); })
+            trades | std::views::transform([&](const MovingAverageTrade& trade) { return trade.limitOrderId; })
             | std::ranges::to<std::vector<std::string>>()
         );
         auto openTrades = trades | std::views::filter([&](const MovingAverageTrade& trade) {
-            const auto limitOrderString = std::to_string(trade.limitOrderId);
-            return limitOrders.contains(limitOrderString) && limitOrders.at(limitOrderString).posstatus == "open";
+            return limitOrders.contains(trade.limitOrderId) && limitOrders.at(trade.limitOrderId).posstatus == "open";
         });
         return {openTrades.begin(), openTrades.end()};
     }

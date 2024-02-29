@@ -91,15 +91,13 @@ namespace Kraken {
         return result;
     }
 
-    KrakenOrder KrakenClient::buy(const std::string& pair, const std::string& volume, const std::string& type, const std::string& orderType) const {
+    KrakenOrder KrakenClient::buy(const std::string& pair, const std::string& volume, const std::string& type, const std::string& orderType, bool dryRun) const {
         curl_slist* headers = nullptr;
         std::vector<const std::pair<std::string, std::string>> postData = {
-                std::make_pair("pair", pair), std::make_pair("volume",  volume), std::make_pair("type", type), std::make_pair("ordertype", orderType)
+                {"pair", pair}, {"volume",  volume}, {"type", type}, {"ordertype", orderType}, {"validate", dryRun ? "true" : "false"}
         };
 
-        // std::string result = makePrivateCall("/0/private/AddOrder", headers, postData);
-        //std::string result = "{\"error\":[\"Failed\", \"txid\"],\"result\":{\"txid\":[\"OFDI5Y-332NU-XRMM2L\"],\"descr\":{\"order\":\"sell 0.01000000 ETHUSDT @ market\"}}}";
-        std::string result = "{\"error\":[],\"result\":{\"txid\":[\"OFDI5Y-332NU-XRMM2L\"],\"descr\":{\"order\":\"sell 0.01000000 ETHUSDT @ market\"}}}";
+        std::string result = makePrivateCall("/0/private/AddOrder", headers, postData);
         nlohmann::json jsonResult = parseAndThrowErrors(result);
         // is it worth turning into an object?
         return jsonResult.get<KrakenOrder>();

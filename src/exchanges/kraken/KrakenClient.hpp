@@ -23,7 +23,7 @@ namespace Kraken {
 
         std::map<std::string, KrakenTradeInfo> getTradeInfo(const std::vector<std::string>&txIds) const;
         virtual std::vector<std::unique_ptr<BaseOHLC>> getOHLC(const long long epochNanos, const std::string& pair) const override;
-        [[nodiscard]] KrakenOrder buy(const std::string& pair, const std::string& volume, const std::string& type, const std::string& orderType) const;
+        KrakenOrder buy(const std::string& pair, const std::string& volume, const std::string& type, const std::string& orderType, bool dryRun = false) const;
         virtual double getTicker(const std::string& pair) const override;
     private:
         static constexpr std::string_view timeURL = "/0/public/Time";

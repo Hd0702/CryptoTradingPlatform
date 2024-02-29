@@ -4,7 +4,7 @@
 #include <vector>
 
 namespace Kraken {
-    class KrakenOrder {
+    struct KrakenOrder {
         struct OrderDescription {
             std::string order;
             std::optional<std::string> close;
@@ -18,7 +18,9 @@ namespace Kraken {
         std::vector<std::string> txid;
         OrderDescription descr;
         friend void from_json(const nlohmann::json& j, KrakenOrder& order) {
-            j.at("txid").get_to(order.txid);
+            if (j.contains("txid")) {
+                j.at("txid").get_to(order.txid);
+            }
             j.at("descr").get_to(order.descr);
         }
     };

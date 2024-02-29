@@ -5,9 +5,9 @@
 
 struct MovingAverageTrade {
     // id of the original order placed
-    long marketOrderId;
+    std::string marketOrderId;
     // id of the limit order placed
-    long limitOrderId;
+    std::string limitOrderId;
     // time period of the first window
     long firstWindow;
     // time period of the second window
