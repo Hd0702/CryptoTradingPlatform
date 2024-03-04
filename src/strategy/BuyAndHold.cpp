@@ -1,11 +1,13 @@
 #include "BuyAndHold.hpp"
 
-BuyAndHold::BuyAndHold(std::shared_ptr<BaseExchange> ex): BaseStrategy(ex) {}
+#include "time/RealClock.hpp"
 
-bool BuyAndHold::buy() {
+BuyAndHold::BuyAndHold(const Kraken::KrakenClient& ex): BaseStrategy(ex, std::make_unique<RealClock>(RealClock())) {}
+
+void BuyAndHold::buy() {
     throw std::logic_error("Function not implemented yet");
 }
 
-bool BuyAndHold::sell() {
+void BuyAndHold::sell() {
     throw std::logic_error("Function not implemented yet");
 }

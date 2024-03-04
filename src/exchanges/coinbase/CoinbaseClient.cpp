@@ -16,7 +16,7 @@ namespace Coinbase {
         return real_size;
     }
 
-    CoinbaseClient::CoinbaseClient(const Env::EnvReader &env_reader_instance, Clock clock) : clock(clock) {
+    CoinbaseClient::CoinbaseClient(const Env::EnvReader &env_reader_instance, RealClock clock) : clock(clock) {
         key = env_reader_instance["COINBASE_API_KEY"];
         secret = env_reader_instance["COINBASE_API_SECRET"];
         curl = curl_easy_init();
@@ -40,7 +40,7 @@ namespace Coinbase {
         const std::string method = "GET";
         const std::string body = "";
         const std::string accounts_url = "/api/v3/brokerage/accounts";
-        const auto timestamp = std::to_string(clock.getMillisSinceEpoch());
+        const auto timestamp = std::to_string(clock.now().time_since_epoch().count());
         curl_easy_setopt(curl, CURLOPT_URL, (url + accounts_url).c_str());
         const auto accept_header = std::make_pair("accept", "application/json");
         const auto access_key_header = std::make_pair("CB-ACCESS-KEY", key);

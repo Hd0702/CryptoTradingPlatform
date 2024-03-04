@@ -32,7 +32,7 @@ include(CTest)
 enable_testing()
 add_subdirectory(tst)
 
-add_executable(CryptoTradingPlatform src/main.cpp src/exchanges/kraken/KrakenClient.hpp src/exchanges/kraken/KrakenClient.cpp src/exchanges/kraken/KrakenClient.cpp src/config/EnvReader.hpp src/config/EnvReader.cpp src/encryption/EncryptionHelper.hpp src/encryption/EncryptionHelper.cpp src/exchanges/coinbase/CoinbaseClient.hpp src/time/Clock.hpp src/time/Clock.cpp src/exchanges/coinbase/CoinbaseClient.cpp
+add_executable(CryptoTradingPlatform src/main.cpp src/exchanges/kraken/KrakenClient.hpp src/exchanges/kraken/KrakenClient.cpp src/exchanges/kraken/KrakenClient.cpp src/config/EnvReader.hpp src/config/EnvReader.cpp src/encryption/EncryptionHelper.hpp src/encryption/EncryptionHelper.cpp src/exchanges/coinbase/CoinbaseClient.hpp src/exchanges/coinbase/CoinbaseClient.cpp
         src/config/EnvReader.cpp
         src/strategy/BaseStrategy.hpp
         src/strategy/BuyAndHold.hpp
@@ -53,5 +53,10 @@ add_executable(CryptoTradingPlatform src/main.cpp src/exchanges/kraken/KrakenCli
         src/exchanges/kraken/KrakenTradeInfo.hpp
         src/time/time_concepts.hpp
         src/exchanges/kraken/KrakenOrder.hpp
+        src/backtest/BacktestEngine.hpp
+        src/backtest/BacktestEngine.cpp
+        src/time/RealClock.hpp
+        src/time/IClock.hpp
+        src/time/FixedClock.hpp
 )
 TARGET_LINK_LIBRARIES(CryptoTradingPlatform LINK_PUBLIC Boost::program_options LINK_PUBLIC ${CURL_LIBRARIES} LINK_PUBLIC ${OPENSSL_LIBRARIES} LINK_PUBLIC nlohmann_json::nlohmann_json)

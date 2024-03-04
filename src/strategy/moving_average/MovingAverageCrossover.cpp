@@ -6,55 +6,57 @@
 namespace Kraken {
     // We should just verify these with backtesting or even better to make it dynamic one day
     static constexpr std::array<std::pair<long, long>, 3> windows = {
-        std::pair{ 2, 5 },
-        std::pair{ 12, 20 },
-        std::pair{ 20, 50 }
+        std::pair{2, 5},
+        std::pair{12, 20},
+        std::pair{20, 50}
     };
 
-    MovingAverageCrossover::MovingAverageCrossover(const KrakenClient& exchange): exchange(exchange), loader(KrakenLoader(exchange)) {}
-
     void MovingAverageCrossover::buy() {
+        // TODO: Check capital here
         // wrap windows around an std::views
-        const auto newTrades = windows | std::views::filter([&](const auto& window) {
+        const auto newTrades = windows | std::views::filter([&](const auto&window) {
             return check(window, "XETHZUSD", true);
-        }) | std::views::transform([&](const auto& window) {
+        }) | std::views::transform([&](const auto&window) {
             // start with dummy value
             MovingAverageTrade tradeInfo;
             tradeInfo.firstWindow = window.first;
             tradeInfo.secondWindow = window.second;
             tradeInfo.pair = "XETHZUSD";
             tradeInfo.amount = 0.01;
-            const KrakenOrder buyOrder = exchange.buy(tradeInfo.pair, std::to_string(tradeInfo.amount), "buy", "market");
+            const KrakenOrder buyOrder = exchange.
+                    buy(tradeInfo.pair, std::to_string(tradeInfo.amount), "buy", "market");
             if (buyOrder.txid.size() > 1) {
-                throw std::invalid_argument(std::format("We should only have one buy order but we have {}", buyOrder.txid.size()));
+                throw std::invalid_argument(std::format("We should only have one buy order but we have {}",
+                                                        buyOrder.txid.size()));
             }
             tradeInfo.marketOrderId = buyOrder.txid[0];
             const auto sellOrder = exchange.buy(tradeInfo.pair, std::to_string(tradeInfo.amount), "sell", "limit");
             if (sellOrder.txid.size() > 1) {
-                throw std::invalid_argument(std::format("We should only have one sell order but we have {}", sellOrder.txid.size()));
+                throw std::invalid_argument(std::format("We should only have one sell order but we have {}",
+                                                        sellOrder.txid.size()));
             }
             tradeInfo.limitOrderId = sellOrder.txid[0];
             return tradeInfo;
         }) | std::ranges::to<std::vector<MovingAverageTrade>>();
-        std::ranges::for_each(newTrades, [&](const MovingAverageTrade& trade) {
+        std::ranges::for_each(newTrades, [&](const MovingAverageTrade&trade) {
             std::ofstream file("exchange_files/kraken/trades/moving_average/" + trade.marketOrderId);
             file << nlohmann::json(trade);
         });
-
     }
 
     void MovingAverageCrossover::sell() {
         const auto inFlightTrades = loadInFlightTrades();
-        const auto tradeToSell = inFlightTrades | std::views::transform([&](const MovingAverageTrade& trade) {
+        const auto tradeToSell = inFlightTrades | std::views::transform([&](const MovingAverageTrade&trade) {
             return check({trade.firstWindow, trade.secondWindow}, trade.pair, false);
         });
-        assert(tradeToSell.size() == inFlightTrades.size() && "Trade to sell size does not match in flight trades size");
+        assert(
+            tradeToSell.size() == inFlightTrades.size() && "Trade to sell size does not match in flight trades size");
         const auto sequence = std::views::iota(0, static_cast<int>(inFlightTrades.size()))
-        | std::views::filter([&](int index) { return tradeToSell[index]; })
-        | std::views::transform([&](int index) { return inFlightTrades[index]; })
-        | std::ranges::to<std::vector<MovingAverageTrade>>();
+                              | std::views::filter([&](int index) { return tradeToSell[index]; })
+                              | std::views::transform([&](int index) { return inFlightTrades[index]; })
+                              | std::ranges::to<std::vector<MovingAverageTrade>>();
         // itereate over the sequence
-        for (const MovingAverageTrade& trade : sequence) {
+        for (const MovingAverageTrade&trade: sequence) {
             std::cout << "Selling " << trade.amount << " of " << trade.pair << " at market price" << std::endl;
             exchange.buy(trade.pair, std::to_string(trade.amount), "sell", "market");
             std::filesystem::remove("exchange_files/kraken/trades/moving_average/" + trade.marketOrderId);
@@ -65,77 +67,88 @@ namespace Kraken {
         // load in existing trades from the exchange
         // TODO: move this to a folder so we dont have to read the whole thing all of the time.
         std::vector<MovingAverageTrade> trades;
-        for (const auto& file: std::filesystem::directory_iterator("exchange_files/kraken/trades/moving_average/")) {
+        for (const auto&file: std::filesystem::directory_iterator("exchange_files/kraken/trades/moving_average/")) {
             const nlohmann::json j = nlohmann::json::parse(std::ifstream(file.path()));
             trades.push_back(j.get<MovingAverageTrade>());
         }
         // check to see if limits have closed
         const std::vector<std::string> vec = trades
-        | std::views::transform([&](const MovingAverageTrade& trade) { return trade.limitOrderId; })
-        | std::ranges::to<std::vector<std::string>>();
+                                             | std::views::transform([&](const MovingAverageTrade&trade) {
+                                                 return trade.limitOrderId;
+                                             })
+                                             | std::ranges::to<std::vector<std::string>>();
         const auto orders = exchange.getTradeInfo(vec);
         const auto limitOrders = exchange.getTradeInfo(
-            trades | std::views::transform([&](const MovingAverageTrade& trade) { return trade.limitOrderId; })
+            trades | std::views::transform([&](const MovingAverageTrade&trade) { return trade.limitOrderId; })
             | std::ranges::to<std::vector<std::string>>()
         );
-        auto openTrades = trades | std::views::filter([&](const MovingAverageTrade& trade) {
+        auto openTrades = trades | std::views::filter([&](const MovingAverageTrade&trade) {
             return limitOrders.contains(trade.limitOrderId) && limitOrders.at(trade.limitOrderId).posstatus == "open";
         });
         return {openTrades.begin(), openTrades.end()};
     }
 
     // only exists for selling purpopses
-    bool MovingAverageCrossover::check(const std::pair<int, int>& trade, const std::string& pair, const bool buy) const {
+    bool MovingAverageCrossover::check(const std::pair<int, int>&trade, const std::string&pair, const bool buy) const {
         // now that we have the trades that are open we need to load in the previous x amount of hours for each window.
         // check if they crossed over in the last hour. If so we sell or buy depending on the direction of the crossover.
-            const auto& [firstWindow, secondWindow] = trade;
-            const auto largerWindow = std::max(firstWindow, secondWindow);
-            const auto currentHour = std::chrono::floor<std::chrono::hours>(std::chrono::system_clock::now().time_since_epoch());
-            const auto windowRange = std::views::iota(0, largerWindow + 1);
-            const auto prices = windowRange | std::views::transform([&](int i) {
-                return getVwap(loader.fetchData(currentHour - std::chrono::hours(i), pair));
-            });
-            // just need two values for each window
-            std::vector<double> window1Values = { 0 };
-            std::vector<double> window2Values = { 0 };
-            for (int i =0; i < prices.size(); ++i) {
-                if (i <= firstWindow) {
-                    window1Values[0] += prices[i];
-                    if (i == firstWindow) window1Values[0] /= firstWindow;
-                } else {
-                    window1Values.push_back((window1Values.back() + prices[i]) / firstWindow);
-                }
-                // repeat for the smaller window
-                if (i <= secondWindow) {
-                    window2Values[0] += prices[i];
-                    if (i == secondWindow) window2Values[0] /= secondWindow;
-                } else {
-                    window2Values.push_back((window2Values.back() + prices[i]) / secondWindow);
-                }
+        const auto&[firstWindow, secondWindow] = trade;
+        const auto largerWindow = std::max(firstWindow, secondWindow);
+        // inject some time into this current hour plz
+        const auto currentHour = std::chrono::floor<std::chrono::hours>(
+            std::chrono::system_clock::now().time_since_epoch());
+        const auto windowRange = std::views::iota(0, largerWindow + 1);
+        const auto prices = windowRange | std::views::transform([&](int i) {
+            return getVwap(loader.fetchData(currentHour - std::chrono::hours(i), pair));
+        });
+        // just need two values for each window
+        std::vector<double> window1Values = {0};
+        std::vector<double> window2Values = {0};
+        for (int i = 0; i < prices.size(); ++i) {
+            if (i <= firstWindow) {
+                window1Values[0] += prices[i];
+                if (i == firstWindow) window1Values[0] /= firstWindow;
             }
+            else {
+                window1Values.push_back((window1Values.back() + prices[i]) / firstWindow);
+            }
+            // repeat for the smaller window
+            if (i <= secondWindow) {
+                window2Values[0] += prices[i];
+                if (i == secondWindow) window2Values[0] /= secondWindow;
+            }
+            else {
+                window2Values.push_back((window2Values.back() + prices[i]) / secondWindow);
+            }
+        }
 
-            if (buy) {
-                // shorter average goes above longer average we buy
-                if (firstWindow < secondWindow) {
-                    return window1Values.back() > window2Values.back() && window1Values[window1Values.size() - 2] < window2Values[window2Values.size() - 2];
-                }
-                return window2Values.back() > window1Values.back() && window2Values[window1Values.size() - 2] < window1Values[window2Values.size() - 2];
-            }
-            // sell if the larger window goes below the smaller window
+        if (buy) {
+            // shorter average goes above longer average we buy
             if (firstWindow < secondWindow) {
-                return window1Values.back() < window2Values.back() && window1Values[window1Values.size() - 2] > window2Values[window2Values.size() - 2];
+                return window1Values.back() > window2Values.back() && window1Values[window1Values.size() - 2] <
+                       window2Values[window2Values.size() - 2];
             }
-            return window2Values.back() < window1Values.back() && window2Values[window1Values.size() - 2] > window1Values[window2Values.size() - 2];
+            return window2Values.back() > window1Values.back() && window2Values[window1Values.size() - 2] <
+                   window1Values[window2Values.size() - 2];
+        }
+        // sell if the larger window goes below the smaller window
+        if (firstWindow < secondWindow) {
+            return window1Values.back() < window2Values.back() && window1Values[window1Values.size() - 2] >
+                   window2Values[window2Values.size() - 2];
+        }
+        return window2Values.back() < window1Values.back() && window2Values[window1Values.size() - 2] > window1Values[
+                   window2Values.size() - 2];
     }
 
-    double MovingAverageCrossover::getVwap(const std::vector<KrakenOHLC>& ohlcPoints) const {
+    double MovingAverageCrossover::getVwap(const std::vector<KrakenOHLC>&ohlcPoints) const {
         const auto [price, volume] = std::reduce(
             ohlcPoints.cbegin(),
             ohlcPoints.cend(),
-            std::array{0.0, 0.0}, [](std::array<double, 2> priceAndVolume, const KrakenOHLC& ohlc) -> std::array<double, 2> {
+            std::array{0.0, 0.0},
+            [](std::array<double, 2> priceAndVolume, const KrakenOHLC&ohlc) -> std::array<double, 2> {
                 // vwap is acting as price since we don't have individual trades here. Just data aggregated by minute
                 return {priceAndVolume[0] + ohlc.getVwap(), priceAndVolume[1] + ohlc.getVolume()};
-        });
+            });
         return price / volume;
     }
 
