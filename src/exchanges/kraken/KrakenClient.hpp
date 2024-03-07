@@ -15,7 +15,8 @@ namespace Kraken {
     class KrakenClient final : BaseExchange {
     public:
         static constexpr std::string_view url = "https://api.kraken.com";
-        explicit KrakenClient(Env::EnvReader& env_reader_instance);
+        explicit KrakenClient(Env::EnvReader env_reader_instance);
+        KrakenClient();
         ~KrakenClient();
         std::string getServerTime();
         std::string getBalance();
@@ -36,7 +37,7 @@ namespace Kraken {
         std::string key;
         std::string secret;
         CURL* curl;
-        Env::EnvReader& env_reader;
+        Env::EnvReader env_reader;
         static size_t curlCallback(char* ptr, size_t size, size_t nmemb, void* userdata);
         [[nodiscard]] std::string signature(const std::string &path, const std::string &nonce, const std::string &postData) const;
         std::string makePublicCall(const std::string& path, const std::unique_ptr<curl_slist> &headers=nullptr,const std::string& postdata = "") const;

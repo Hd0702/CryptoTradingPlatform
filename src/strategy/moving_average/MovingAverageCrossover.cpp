@@ -23,6 +23,12 @@ namespace Kraken {
             tradeInfo.secondWindow = window.second;
             tradeInfo.pair = "XETHZUSD";
             tradeInfo.amount = 0.01;
+            return tradeInfo;
+        }) | std::views::take_while([&](const MovingAverageTrade&trade) {
+            if (trade.amount > capital) return false;
+            capital -= trade.amount;
+            return true;
+        }) | std::views::transform([&](MovingAverageTrade tradeInfo) {
             const KrakenOrder buyOrder = exchange.
                     buy(tradeInfo.pair, std::to_string(tradeInfo.amount), "buy", "market");
             if (buyOrder.txid.size() > 1) {
@@ -58,7 +64,10 @@ namespace Kraken {
         // itereate over the sequence
         for (const MovingAverageTrade&trade: sequence) {
             std::cout << "Selling " << trade.amount << " of " << trade.pair << " at market price" << std::endl;
-            exchange.buy(trade.pair, std::to_string(trade.amount), "sell", "market");
+            const auto sellOrder = exchange.buy(trade.pair, std::to_string(trade.amount), "sell", "market");
+            capital += trade.amount;
+            std::ofstream file("exchange_files/kraken/trades/moving_average/_complete/" + trade.marketOrderId);
+            file << nlohmann::json(trade);
             std::filesystem::remove("exchange_files/kraken/trades/moving_average/" + trade.marketOrderId);
         }
     }
@@ -78,12 +87,20 @@ namespace Kraken {
                                              })
                                              | std::ranges::to<std::vector<std::string>>();
         const auto orders = exchange.getTradeInfo(vec);
+        // we need to add capital and remove trades that hit a limit order.
         const auto limitOrders = exchange.getTradeInfo(
             trades | std::views::transform([&](const MovingAverageTrade&trade) { return trade.limitOrderId; })
             | std::ranges::to<std::vector<std::string>>()
         );
         auto openTrades = trades | std::views::filter([&](const MovingAverageTrade&trade) {
-            return limitOrders.contains(trade.limitOrderId) && limitOrders.at(trade.limitOrderId).posstatus == "open";
+            if (limitOrders.contains(trade.limitOrderId)) {
+                if (limitOrders.at(trade.limitOrderId).posstatus == "open") return true;
+                std::ofstream file("exchange_files/kraken/trades/moving_average/_complete/" + trade.marketOrderId);
+                file << nlohmann::json(trade);
+                std::filesystem::remove("exchange_files/kraken/trades/moving_average/" + trade.marketOrderId);
+                capital += trade.amount;
+            }
+            return false;
         });
         return {openTrades.begin(), openTrades.end()};
     }
@@ -95,8 +112,7 @@ namespace Kraken {
         const auto&[firstWindow, secondWindow] = trade;
         const auto largerWindow = std::max(firstWindow, secondWindow);
         // inject some time into this current hour plz
-        const auto currentHour = std::chrono::floor<std::chrono::hours>(
-            std::chrono::system_clock::now().time_since_epoch());
+        const auto currentHour = std::chrono::floor<std::chrono::hours>(clock->now().time_since_epoch());
         const auto windowRange = std::views::iota(0, largerWindow + 1);
         const auto prices = windowRange | std::views::transform([&](int i) {
             return getVwap(loader.fetchData(currentHour - std::chrono::hours(i), pair));

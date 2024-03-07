@@ -5,7 +5,7 @@
 class FixedClock: public IClock {
     std::chrono::system_clock::time_point time;
 public:
-    FixedClock(const std::chrono::system_clock::time_point time): time(time) {}
+    explicit FixedClock(const std::chrono::system_clock::time_point time): time(time) {}
 
     [[nodiscard]] std::chrono::system_clock::time_point now() const override {
         return time;

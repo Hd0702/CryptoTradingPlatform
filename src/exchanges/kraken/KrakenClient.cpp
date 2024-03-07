@@ -21,7 +21,10 @@ namespace Kraken {
         return jsonResult.at("result");
     }
 
-    KrakenClient::KrakenClient(Env::EnvReader &env_reader_instance) : env_reader(env_reader_instance) { Init(); }
+    KrakenClient::KrakenClient(Env::EnvReader env_reader_instance) : env_reader(std::move(env_reader_instance)) { Init(); }
+
+    KrakenClient::KrakenClient() : env_reader(Env::EnvReader(".env")) { Init(); }
+
 
     void KrakenClient::Init() {
 
