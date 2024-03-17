@@ -3,6 +3,7 @@
 #include <vector>
 #include <curl/curl.h>
 
+#include "KrakenCancelOrder.hpp"
 #include "../../config/EnvReader.hpp"
 #include "../BaseExchange.hpp"
 #include "KrakenOHLC.hpp"
@@ -26,7 +27,9 @@ namespace Kraken {
         virtual std::vector<std::unique_ptr<BaseOHLC>> getOHLC(const long long epochNanos, const std::string& pair) const override;
         KrakenOrder buy(const std::string& pair, const std::string& volume, const std::string& type, const std::string& orderType, bool dryRun = false) const;
         virtual double getTicker(const std::string& pair) const override;
+        KrakenCancelOrder cancelOrder(const std::string& txId) const;
     private:
+        static constexpr std::string_view cancelURL = "/0/private/CancelOrder";
         static constexpr std::string_view timeURL = "/0/public/Time";
         static constexpr std::string_view ohlcURL = "/0/public/OHLC";
         static constexpr std::string_view tickerURL = "/0/public/Ticker";

@@ -5,6 +5,7 @@
 
 class BacktestEngine {
 public:
+    BacktestEngine();
     /**
      * Simulates running a particular strategy and creates a CSV report of each trade and the profit from the trade
      * Runs buy and sell for every hour in the range of start and end
@@ -16,4 +17,7 @@ public:
         const std::chrono::time_point<std::chrono::system_clock> end,
         const double capital
     );
+
+private:
+    Kraken::KrakenClient exchange;
 };

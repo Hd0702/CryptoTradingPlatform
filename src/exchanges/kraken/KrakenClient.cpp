@@ -102,8 +102,20 @@ namespace Kraken {
 
         std::string result = makePrivateCall("/0/private/AddOrder", headers, postData);
         nlohmann::json jsonResult = parseAndThrowErrors(result);
-        // is it worth turning into an object?
-        return jsonResult.get<KrakenOrder>();
+        auto order = jsonResult.get<KrakenOrder>();
+        // if dry run add an arbitrary txid for backtesting purposes
+        if (dryRun) order.txid.push_back(nonce());
+        return order;
+    }
+
+    KrakenCancelOrder KrakenClient::cancelOrder(const std::string& txId) const {
+        curl_slist* headers = nullptr;
+        std::vector<const std::pair<std::string, std::string>> postData = {
+                {"txid", txId}
+        };
+        std::string result = makePrivateCall(std::string(cancelURL), headers, postData);
+        nlohmann::json jsonResult = parseAndThrowErrors(result);
+        return jsonResult.get<KrakenCancelOrder>();
     }
 
     std::string KrakenClient::nonce() const {

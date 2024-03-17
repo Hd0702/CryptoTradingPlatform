@@ -3,6 +3,7 @@
 #include <ranges>
 #include <algorithm>
 
+
 namespace Kraken {
     // We should just verify these with backtesting or even better to make it dynamic one day
     static constexpr std::array<std::pair<long, long>, 3> windows = {
@@ -29,14 +30,13 @@ namespace Kraken {
             capital -= trade.amount;
             return true;
         }) | std::views::transform([&](MovingAverageTrade tradeInfo) {
-            const KrakenOrder buyOrder = exchange.
-                    buy(tradeInfo.pair, std::to_string(tradeInfo.amount), "buy", "market");
+            const KrakenOrder buyOrder = exchange.buy(tradeInfo.pair, std::to_string(tradeInfo.amount), "buy", "market", dryRun);
             if (buyOrder.txid.size() > 1) {
                 throw std::invalid_argument(std::format("We should only have one buy order but we have {}",
                                                         buyOrder.txid.size()));
             }
             tradeInfo.marketOrderId = buyOrder.txid[0];
-            const auto sellOrder = exchange.buy(tradeInfo.pair, std::to_string(tradeInfo.amount), "sell", "limit");
+            const auto sellOrder = exchange.buy(tradeInfo.pair, std::to_string(tradeInfo.amount), "sell", "limit", dryRun);
             if (sellOrder.txid.size() > 1) {
                 throw std::invalid_argument(std::format("We should only have one sell order but we have {}",
                                                         sellOrder.txid.size()));
@@ -57,15 +57,16 @@ namespace Kraken {
         });
         assert(
             tradeToSell.size() == inFlightTrades.size() && "Trade to sell size does not match in flight trades size");
-        const auto sequence = std::views::iota(0, static_cast<int>(inFlightTrades.size()))
+        const std::vector<MovingAverageTrade> sequence = std::views::iota(0, static_cast<int>(inFlightTrades.size()))
                               | std::views::filter([&](int index) { return tradeToSell[index]; })
                               | std::views::transform([&](int index) { return inFlightTrades[index]; })
                               | std::ranges::to<std::vector<MovingAverageTrade>>();
         // itereate over the sequence
         for (const MovingAverageTrade&trade: sequence) {
             std::cout << "Selling " << trade.amount << " of " << trade.pair << " at market price" << std::endl;
-            const auto sellOrder = exchange.buy(trade.pair, std::to_string(trade.amount), "sell", "market");
+            const auto sellOrder = exchange.buy(trade.pair, std::to_string(trade.amount), "sell", "market", dryRun);
             capital += trade.amount;
+            const auto cancelOrder = exchange.cancelOrder(trade.limitOrderId);
             std::ofstream file("exchange_files/kraken/trades/moving_average/_complete/" + trade.marketOrderId);
             file << nlohmann::json(trade);
             std::filesystem::remove("exchange_files/kraken/trades/moving_average/" + trade.marketOrderId);

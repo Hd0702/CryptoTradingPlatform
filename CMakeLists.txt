@@ -35,7 +35,9 @@ add_subdirectory(tst)
 add_executable(CryptoTradingPlatform src/main.cpp src/exchanges/kraken/KrakenClient.hpp src/exchanges/kraken/KrakenClient.cpp src/exchanges/kraken/KrakenClient.cpp src/config/EnvReader.hpp src/config/EnvReader.cpp src/encryption/EncryptionHelper.hpp src/encryption/EncryptionHelper.cpp src/exchanges/coinbase/CoinbaseClient.hpp src/exchanges/coinbase/CoinbaseClient.cpp
         src/config/EnvReader.cpp
         src/strategy/BaseStrategy.hpp
+        src/strategy/BaseStrategy.cpp
         src/strategy/BuyAndHold.hpp
+        src/exchanges/kraken/KrakenCancelOrder.hpp
         src/exchanges/kraken/KrakenOHLC.hpp
         src/exchanges/kraken/KrakenOHLC.cpp
         src/exchanges/BaseExchange.hpp

@@ -9,6 +9,7 @@ namespace Kraken {
     class KrakenLoader {
     public:
         explicit KrakenLoader(const KrakenClient& _client, const std::filesystem::path& = "exchange_files");
+        explicit KrakenLoader(const KrakenLoader& loader);
 
         // Get trades for per a minute for the hour contained within epochSeconds
         template<typename T>
@@ -18,16 +19,13 @@ namespace Kraken {
             // check if next hour is past right now, if so we don't need to make a file
             std::chrono::hours nextHour = floorHour + std::chrono::hours(1);
             if (nextHour > std::chrono::floor<std::chrono::hours>(std::chrono::system_clock::now().time_since_epoch())) {
-                // We are in the current hour, no need to make a file
-                const auto startHour = std::chrono::duration_cast<std::chrono::seconds>(floorHour).count();
-                return aggregateTradesInMinutes(client.getTrades(startHour, pair));
+                return queryAndSaveHourOfTrades(floorHour, pair);
             }
             std::filesystem::path pairPath = filePath / pair;
             create_directories(pairPath);
             pairPath /= std::to_string(floorHour.count());
             std::cout << "File already exists at " << filePath.c_str() << std::endl;
-            std::vector<KrakenOHLC> ohlcPoints = saveHourOfTrades(floorHour, pair);
-            // we shouldn't make a file if we are getting the current hour
+            std::vector<KrakenOHLC> ohlcPoints;
             if (std::filesystem::exists(pairPath)) {
                 std::ifstream file(pairPath);
                 if (!file.is_open()) {
@@ -41,7 +39,7 @@ namespace Kraken {
                     ohlcPoints.push_back(obj);
                 }
             } else {
-                ohlcPoints = saveHourOfTrades(floorHour, pair);
+                ohlcPoints = queryAndSaveHourOfTrades(floorHour, pair);
             }
             return ohlcPoints;
         }
@@ -49,7 +47,7 @@ namespace Kraken {
     private:
         [[nodiscard]] std::vector<KrakenOHLC> aggregateTradesInMinutes(const std::vector<KrakenTrade>&trades) const;
 
-        std::vector<KrakenOHLC> saveHourOfTrades(std::chrono::hours hour, const std::string&pair) const;
+        std::vector<KrakenOHLC> queryAndSaveHourOfTrades(std::chrono::hours hour, const std::string&pair) const;
         std::filesystem::path filePath;
         KrakenClient client;
     };

@@ -10,8 +10,9 @@ namespace Kraken {
     public:
         explicit MovingAverageCrossover(
             const KrakenClient& exchange,
-            std::unique_ptr<IClock> clock
-            ): BaseStrategy(exchange, std::move(clock)), loader(KrakenLoader(exchange)) {};
+            std::unique_ptr<IClock> clock,
+            const bool dryRun = false
+            ): BaseStrategy(exchange, KrakenLoader(exchange), std::move(clock), dryRun) {};
         void buy() override;
         void sell() override;
         [[nodiscard]] std::vector<MovingAverageTrade> loadInFlightTrades();
@@ -20,6 +21,5 @@ namespace Kraken {
         void buyOrSell();
     private:
         [[nodiscard]] double getVwap(const std::vector<KrakenOHLC>& ohlcPoints) const;
-        const KrakenLoader loader;
     };
 }
